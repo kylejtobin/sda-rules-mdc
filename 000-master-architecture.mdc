@@ -1,0 +1,181 @@
+---
+description: |
+  Semantic Domain Architecture — universal, contract-first rule-set for
+  Python projects. Models are intelligent; protocols define boundaries;
+  primitives are replaced by validated value-objects. Applies to every
+  commit and AI-generated change.
+globs: ["**/*.py"]
+alwaysApply: true
+version: 1.2.0
+created_at: 2025-07-16
+---
+
+# 🛡️ Semantic Domain Architecture · Master Rules
+
+Any violation fails CI (§14).
+
+---
+
+## 1 · Philosophy & Scope
+
+1. **Intelligent models** – every datum is a `pydantic.BaseModel`
+   (or frozen value-object) that knows its meaning.
+2. **Contract boundaries** – `typing.Protocol` types declare behaviour
+   other layers must satisfy.
+3. **Value-objects all the way down** – primitives become named,
+   validated types (`price: Price`, not `price: Decimal`).
+4. Rules apply to all source—manual or AI-generated.
+
+---
+
+## 2 · Canonical Layer Model
+
+| Layer               | Contents                                   | Depends on    |
+| ------------------- | ------------------------------------------ | ------------- |
+| **domain/**         | `BaseModel`, `Protocol`, `Enum`/`Literal`  | —             |
+| **infrastructure/** | Concrete adapters, resource factories      | domain        |
+| **application/**    | Orchestration & services (no domain rules) | domain, infra |
+| **api/**            | Presentation / I/O (FastAPI, CLI, UI)      | application   |
+
+Dependencies flow **downward only**.
+
+---
+
+## 3 · Init-File Contract Rules
+
+- **domain `__init__.py`** may export _only_ `BaseModel`, `Protocol`,
+  `Enum`, or `Literal` names.
+- **infrastructure `__init__.py`** may export _only_ concrete adapters
+  or wiring helpers.
+- Enforced by the `init-police` AST linter (§11).
+
+---
+
+## 4 · Value-Object Discipline
+
+1. Replace primitives with single-field frozen models:
+
+   ```python
+   class Price(BaseModel):
+       value: Decimal = Field(gt=0)
+       model_config = {"frozen": True, "extra": "forbid"}
+   ```
+
+2. Enumerations for finite vocabularies; `Literal` only if no behaviour.
+3. All arithmetic or unit conversions live on the value-object.
+
+---
+
+## 5 · Domain Model Rules
+
+- Inherit `pydantic.BaseModel`; `model_config = {"extra": "forbid",
+"frozen": True}` unless justified.
+- No untyped containers, `Any`, hidden defaults, or partial construction
+  (`model_construct` banned).
+- **Optional misuse** – `Optional[T]` banned unless `None` has explicit
+  semantic meaning (document in field comment).
+- Allowed defaults: immutable literals or value-objects.
+- Application rules via `@computed_field`; heavy rules may use
+  `@cached_property` **only on frozen models and with profiling proof**.
+- Validators may transform but **never add/remove fields** or back-fill
+  data.
+- Domain layer may not expose or accept Pandas/Polars/NumPy objects;
+  convert them at ingress.
+- Mandatory docstring describing meaning and invariants.
+
+---
+
+## 6 · Protocol Rules
+
+- Reside under `domain/protocols/`.
+- Use `typing.Protocol`; mark `@runtime_checkable` when needed.
+- Async signatures for I/O-bound behaviour.
+- No infrastructure details (drivers, connection strings).
+
+---
+
+## 7 · Infrastructure Guidelines
+
+- Adapters must structurally conform to domain `Protocol`s.
+- `Generic[T] where T : BaseModel` allowed; never introspect/mutate `T`.
+- Infra-local protocols may exist but are never imported by domain.
+
+---
+
+## 8 · Service / Orchestration Guidelines
+
+- Services coordinate adapters & side-effects; **no domain rules**.
+- Accept contracts (`BaseModel` / `Protocol`) as parameters.
+- Stateless and deterministic where practical.
+
+---
+
+## 9 · Prohibited Constructs (❌ Hard Bans)
+
+| Category           | Ban                                                      |
+| ------------------ | -------------------------------------------------------- |
+| Untyped containers | `dict`, `list`, `tuple` without generics                 |
+| Weak typing        | `Any`, bare `object`, silent `typing.cast`               |
+| Silence flags      | `# type: ignore`, `# noqa` (except generated code)       |
+| Dynamic access     | `getattr` / `setattr` on domain models                   |
+| Implicit units     | Hidden ratio↔percent / basis-point maths                 |
+| Validator mutation | Adding/removing fields post-init                         |
+| Extra-allow        | `model_config = {"extra": "allow"}` in domain            |
+| Hidden defaults    | `defaultdict`, `.get(key, d)` or similar in domain logic |
+| External leakage   | Passing Pandas/Polars/NumPy objects into domain models   |
+
+---
+
+## 10 · Mandatory Patterns
+
+- **Identifier strategy**: UUID-v7 for entities; ULID (event-time) for
+  time-series; hybrid `<uuid>:<ulid>` for entity+time.
+- If an ID can be absent, model a value-object (`MaybeId`) rather than
+  `Optional[str]`.
+- Convert external objects **once at ingress**.
+- Application logic deterministic; side-effects only in outer layers.
+
+---
+
+## 11 · Lint / Enforcement Tools
+
+- Static: `mypy` or `pyright` in strict mode.
+- AST linters (pre-commit):
+
+  1. `init-police`
+  2. `model-defaults-ban`
+  3. `value-object-primitive-ban`
+
+- CI rejects on any violation.
+
+---
+
+## 12 · Testing Requirements
+
+- Unit tests target value-objects & computed fields—**no mocks**.
+- Adapter tests assert `Protocol` conformance.
+- Performance tests required for any `cached_property`.
+
+---
+
+## 13 · Performance & Caching
+
+- Computed fields may recalc; optimise only with profiling.
+- `cached_property` allowed only on frozen models with profiling proof.
+
+---
+
+## 14 · Violation Protocol
+
+1. Reject the change.
+2. Fail CI citing violated rule section.
+3. Notify author for correction.
+4. Never silently downgrade enforcement.
+
+---
+
+## 15 · Naming & File Conventions
+
+- Files: `value_objects.py`, `models.py`, `protocols.py`, `exceptions.py`.
+- Enum constants: `SCREAMING_SNAKE_CASE`.
+- Hybrid IDs use colon delimiter.

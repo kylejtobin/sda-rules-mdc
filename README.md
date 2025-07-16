@@ -1,6 +1,8 @@
 # 🧠 Semantic Domain Architecture Rules (.mdc)
 
-This repository defines a canonical ruleset for designing software systems with **Semantic Domain Architecture (SDA)**—a high-integrity architectural approach where your **domain models are the source of truth** for both computation and meaning.
+This repository defines a canonical ruleset for designing software systems with **Semantic Domain Architecture (SDA)**—a high-integrity architectural approach where your **domain models are the source of truth** for both computation and meaning. You can find the master architecture rules file here:
+
+[000-master-architecture.mdc](000-master-architecture.mdc)
 
 If you’ve ever asked *“Why is all the business logic smeared across ten services?”*—this is your answer.
 
@@ -10,9 +12,22 @@ If you’ve ever asked *“Why is all the business logic smeared across ten serv
 
 ---
 
-## ✅ What This Is
+## 🤔 Want to Know More?
 
-This is a `.mdc` ruleset designed for use with [Cursor](https://www.cursor.sh), a development environment that can **enforce your architecture as you type**. It captures the refined lessons of years spent in both traditional application design and modern LLM-native systems.
+The full technical philosophy is published in  
+[**The Semantic Layer We Never Knew We Were Building**](the_semantic_layer.md)
+
+It walks through:
+- The origins of SDA in cloud-native and agent systems
+- Why service-oriented thinking falls short for knowledge-dense domains
+- How Pydantic, protocols, and immutable models can redefine your architecture
+- How AI systems benefit from semantic precision you were already going to need
+
+---
+
+## 🔧 What This Repo Has For You
+
+This repo has a `.mdc` ruleset designed for use with [Cursor](https://www.cursor.sh), a development environment that can **enforce your architecture as you type**. It captures the refined lessons of years spent in both traditional application design and modern LLM-native systems.
 
 It encodes rules for:
 
@@ -22,7 +37,7 @@ It encodes rules for:
 - Protocol- and Pydantic-first programming
 - Immutable, declarative, testable domain logic
 
-And it does it without dogma. These rules were battle-tested in systems where **agents reason, graphs retrieve, and business logic must never lie**.
+And it does it without dogma. These rules are designed for production systems systems where **agents reason, graphs retrieve, and business logic must never lie**.
 
 ---
 
@@ -67,19 +82,6 @@ You don’t need to adopt every rule at once. But when you’re ready to **stop 
 
 ---
 
-## 🧠 Want to Know More?
-
-The full technical philosophy is published in  
-[**The Semantic Layer We Never Knew We Were Building**](the_semantic_layer.md)
-
-It walks through:
-- The origins of SDA in cloud-native and agent systems
-- Why service-oriented thinking falls short for knowledge-dense domains
-- How Pydantic, protocols, and immutable models can redefine your architecture
-- How AI systems benefit from semantic precision you were already going to need
-
----
-
 ## 🛠 Maintainer
 
 Kyle ([@kylejtobin](https://github.com/kylejtobin)) – CTO, semantic application architect, sysadmin.  
@@ -89,4 +91,4 @@ Former barbecue overlord. Occasional woodworker.
 
 ## 📜 License
 
-MIT – but don’t just copy this. Understand it. Live it. Then write better software.
+MIT, but you can’t own patterns. They’re the chords, not the music.
