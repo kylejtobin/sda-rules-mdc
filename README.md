@@ -1,14 +1,12 @@
-# 🧠 Semantic Domain Architecture Rules (.mdc)
+# 🧠 Semantic Domain Architecture
 
-This repository defines a canonical ruleset for designing software systems with **Semantic Domain Architecture (SDA)**—a high-integrity architectural approach where your **domain models are the source of truth** for both computation and meaning. You can find the master architecture rules file here:
+A pattern so obvious you'll wonder why we ever did it differently.
 
-[000-master-architecture.mdc](000-master-architecture.mdc)
+[000-master-architecture.mdc](000-master-architecture.mdc) ← The complete pattern
 
-If you’ve ever asked *“Why is all the business logic smeared across ten services?”*—this is your answer.
+If you've ever asked *"Why is all the business logic smeared across ten services?"*—here's your answer.
 
-> **Semantic Domain Architecture** treats domain models not as dumb containers, but as intelligent agents of meaning—self-validating, self-explaining, and structurally aware.  
->  
-> It combines the rigor of type systems with the elegance of declarative semantics, giving you a system where knowledge lives where it belongs.
+> **Semantic Domain Architecture** recognizes a simple truth: when your models truly encode reality, everything else—services, tests, infrastructure—becomes obvious mechanical work. The model IS the specification.
 
 ---
 
@@ -17,68 +15,71 @@ If you’ve ever asked *“Why is all the business logic smeared across ten serv
 The full technical philosophy is published in  
 [**The Semantic Layer We Never Knew We Were Building**](the_semantic_layer.md)
 
-It walks through:
-- The origins of SDA in cloud-native and agent systems
-- Why service-oriented thinking falls short for knowledge-dense domains
-- How Pydantic, protocols, and immutable models can redefine your architecture
-- How AI systems benefit from semantic precision you were already going to need
+It reveals:
+- How twenty years of "defensive programming" was actually reality encoding
+- Why your constraints teach AI more than any prompt ever could
+- How intelligent models make service layers nearly obsolete
+- Why the best architecture emerges rather than being enforced
 
 ---
 
-## 🔧 What This Repo Has For You
+## 🔧 What You'll Find Here
 
-This repo has a `.mdc` ruleset designed for use with [Cursor](https://www.cursor.sh), a development environment that can **enforce your architecture as you type**. It captures the refined lessons of years spent in both traditional application design and modern LLM-native systems.
+A single `.mdc` file that changes how you think about architecture. Not rules to enforce, but a pattern so clear you'll see it everywhere once you know what to look for.
 
-It encodes rules for:
+The core insight: Make your models so intelligent that AI (and developers) can read them and understand your entire domain. When `Temperature` knows thermodynamics and `Order` knows your business rules, architecture stops being something you impose and starts being something that emerges.
 
-- Project structure and folder semantics
-- Domain model integrity and composition
-- Boundary enforcement between domain, infrastructure, and application layers
-- Protocol- and Pydantic-first programming
-- Immutable, declarative, testable domain logic
-
-And it does it without dogma. These rules are designed for production systems systems where **agents reason, graphs retrieve, and business logic must never lie**.
+Use it with [Cursor](https://www.cursor.sh) for AI that understands your domain as well as you do—because your models teach it.
 
 ---
 
 ## 🧩 Why It Works
 
-Semantic Domain Architecture solves a few timeless problems:
+One pattern solves multiple problems:
 
-- Business logic scattering → **Logic lives in the model**
-- Testing complexity → **Models are testable in isolation**
-- LLM integration overhead → **Structured output comes for free**
-- Onboarding pain → **Read the model, understand the system**
-- Drift across services → **One source of semantic truth**
+- Business logic scattering → **Logic lives with data**
+- Testing complexity → **Models test themselves**
+- AI integration overhead → **Models already teach reality**
+- Onboarding pain → **Read the models, understand everything**
+- Service sprawl → **Services just orchestrate**
 
-It also makes your architecture **modular, explainable, and correct by construction**.
+Your architecture becomes **self-evident, semantic, and impossible to get wrong**.
 
 ---
 
-## 🧱 Core Ideas
+## 🧱 The Pattern
 
-Here are the foundations the `.mdc` enforces:
+Models encode reality. Everything else follows.
 
-- **Value objects all the way down** – Use Pydantic models for every semantic unit (`Price`, `ChunkId`, `RiskScore`, etc).
-- **Domain = Computation + Meaning** – Business logic belongs in computed fields on immutable models.
-- **Protocols define boundaries** – Every integration is described via explicit contracts, not hard-wired classes.
-- **No logic in services** – Application services orchestrate; they don’t calculate.
-- **Infrastructure is plug-and-play** – Adapters live behind protocols and can be swapped without touching the domain.
-- **Init files define public surface** – Every layer exports models, enums, and protocols clearly and cleanly.
+```python
+class Temperature(BaseModel):
+    celsius: Decimal = Field(ge=-273.15)  # Absolute zero exists
+    
+    @computed_field
+    @property
+    def fahrenheit(self) -> Decimal:
+        return self.celsius * Decimal('1.8') + 32
+    
+    def __add__(self, other: "Temperature") -> "Temperature":
+        raise TypeError("Cannot add temperatures")  # That's not how physics works
+```
 
-If you want a codebase that explains itself, scales cleanly, and plays perfectly with agents or AI systems, these rules will feel like home.
+This model teaches:
+- Physical constraints (absolute zero)
+- Unit conversions (celsius ↔ fahrenheit)
+- Invalid operations (temperatures don't sum)
+
+When AI reads this, it learns thermodynamics. When it reads your `Order` model, it learns your business. Services become trivial orchestration of intelligent models.
 
 ---
 
 ## 🚀 Getting Started
 
-To use these rules in your own repo:
-
 1. Create a `.cursor/` directory in your project root
-2. Copy `rules.mdc` into `.cursor/rules.mdc`
-3. Use Cursor to develop against the spec—or just treat it as an executable architectural manifesto
+2. Copy `000-master-architecture.mdc` into `.cursor/rules/000-master-architecture.mdc`
+3. Watch as your models become teachers and your architecture becomes inevitable
 
-You don’t need to adopt every rule at once. But when you’re ready to **stop writing services that don’t serve anyone**, start here.
+You don't need to refactor everything at once. Start with one model. Make it truly intelligent. The path forward will become obvious.
 
 ---
 
@@ -91,4 +92,4 @@ Former barbecue overlord. Occasional woodworker.
 
 ## 📜 License
 
-MIT, but you can’t own patterns. They’re the chords, not the music.
+MIT, but you can't own patterns. They're the chords, not the music.
