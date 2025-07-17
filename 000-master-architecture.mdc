@@ -1,14 +1,3 @@
----
-description: |
-  Semantic Domain Architecture — universal, contract-first rule-set for
-  Python projects. Models are intelligent; protocols define boundaries;
-  primitives are replaced by validated value-objects. Applies to every
-  commit and AI-generated change.
-globs: ["**/*.py"]
-alwaysApply: true
-version: 1.2.0
-created_at: 2025-07-16
----
 
 # 🛡️ Semantic Domain Architecture · Master Rules
 
@@ -137,16 +126,18 @@ Dependencies flow **downward only**.
 
 ---
 
-## 11 · Lint / Enforcement Tools
+## 11 · Lint & Static Analysis
 
-- Static: `mypy` or `pyright` in strict mode.
-- AST linters (pre-commit):
+All Python source **must** pass the following tools before agent development completes:
 
-  1. `init-police`
-  2. `model-defaults-ban`
-  3. `value-object-primitive-ban`
+1. **mypy --strict** – full static type-checking; _zero_ tolerances for errors or unsafes.
+2. **ruff check PATH -v** – exhaustive lint suite (style, complexity, security, and type-hint hygiene).
 
-- CI rejects on any violation.
+Enforcement strategy:
+
+- Any new lint rule introduced by Ruff **must** be added to `pyproject.toml` with either an explicit allow-list or a codebase-wide fix.
+- Type-suppressions (`# type: ignore`) are prohibited unless explicitly authorized by user
+
 
 ---
 
@@ -169,6 +160,17 @@ Dependencies flow **downward only**.
 
 1. Reject the change.
 2. Fail CI citing violated rule section.
+3. Notify author for correction.
+4. Never silently downgrade enforcement.
+
+---
+
+## 15 · Naming & File Conventions
+
+- Files: `value_objects.py`, `models.py`, `protocols.py`, `exceptions.py`.
+- Enum constants: `SCREAMING_SNAKE_CASE`.
+- Hybrid IDs use colon delimiter.
+
 3. Notify author for correction.
 4. Never silently downgrade enforcement.
 
