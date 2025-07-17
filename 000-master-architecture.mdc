@@ -1,183 +1,194 @@
+---
+description: Models that teach reality. When every constraint encodes physics and every field has meaning, AI understands your domain as well as you do.
+globs: ["**/*.py"]
+alwaysApply: true
+version: 4.0.0
+---
 
-# 🛡️ Semantic Domain Architecture · Master Rules
+# Models Are Reality Teachers
 
-Any violation fails CI (§14).
+When you write `price: Decimal = Field(gt=0)`, you're not validating data. You're teaching that prices can't be negative in this universe. AI learns your reality from your models.
 
 ---
 
-## 1 · Philosophy & Scope
+## Core Pattern: Intelligent Value Objects
 
-1. **Intelligent models** – every datum is a `pydantic.BaseModel`
-   (or frozen value-object) that knows its meaning.
-2. **Contract boundaries** – `typing.Protocol` types declare behaviour
-   other layers must satisfy.
-3. **Value-objects all the way down** – primitives become named,
-   validated types (`price: Price`, not `price: Decimal`).
-4. Rules apply to all source—manual or AI-generated.
+```python
+class Temperature(BaseModel):
+    """Temperature that knows thermodynamic limits."""
+    celsius: Decimal = Field(ge=-273.15, le=5778)  # Absolute zero to Sun's surface
+    
+    model_config = {"frozen": True}
+    
+    @computed_field
+    @property
+    def fahrenheit(self) -> Decimal:
+        return self.celsius * Decimal('1.8') + 32
+    
+    @computed_field
+    @property
+    def state_of_water(self) -> Literal["solid", "liquid", "gas"]:
+        if self.celsius <= 0:
+            return "solid"
+        elif self.celsius >= 100:
+            return "gas"
+        return "liquid"
+    
+    def __add__(self, other: "Temperature") -> "Temperature":
+        # Temperatures don't add - this teaches physics
+        raise TypeError("Cannot add temperatures (that's not how thermodynamics works)")
+```
 
----
+This model teaches:
+- Physical constraints (absolute zero exists)
+- Unit conversions (F = C × 1.8 + 32)  
+- State transitions (water freezes at 0°C)
+- Invalid operations (temperatures don't sum)
 
-## 2 · Canonical Layer Model
-
-| Layer               | Contents                                   | Depends on    |
-| ------------------- | ------------------------------------------ | ------------- |
-| **domain/**         | `BaseModel`, `Protocol`, `Enum`/`Literal`  | —             |
-| **infrastructure/** | Concrete adapters, resource factories      | domain        |
-| **application/**    | Orchestration & services (no domain rules) | domain, infra |
-| **api/**            | Presentation / I/O (FastAPI, CLI, UI)      | application   |
-
-Dependencies flow **downward only**.
-
----
-
-## 3 · Init-File Contract Rules
-
-- **domain `__init__.py`** may export _only_ `BaseModel`, `Protocol`,
-  `Enum`, or `Literal` names.
-- **infrastructure `__init__.py`** may export _only_ concrete adapters
-  or wiring helpers.
-- Enforced by the `init-police` AST linter (§11).
-
----
-
-## 4 · Value-Object Discipline
-
-1. Replace primitives with single-field frozen models:
-
-   ```python
-   class Price(BaseModel):
-       value: Decimal = Field(gt=0)
-       model_config = {"frozen": True, "extra": "forbid"}
-   ```
-
-2. Enumerations for finite vocabularies; `Literal` only if no behaviour.
-3. All arithmetic or unit conversions live on the value-object.
+Every domain concept gets this treatment. No primitives.
 
 ---
 
-## 5 · Domain Model Rules
+## Master Example: Order Lifecycle
 
-- Inherit `pydantic.BaseModel`; `model_config = {"extra": "forbid",
-"frozen": True}` unless justified.
-- No untyped containers, `Any`, hidden defaults, or partial construction
-  (`model_construct` banned).
-- **Optional misuse** – `Optional[T]` banned unless `None` has explicit
-  semantic meaning (document in field comment).
-- Allowed defaults: immutable literals or value-objects.
-- Application rules via `@computed_field`; heavy rules may use
-  `@cached_property` **only on frozen models and with profiling proof**.
-- Validators may transform but **never add/remove fields** or back-fill
-  data.
-- Domain layer may not expose or accept Pandas/Polars/NumPy objects;
-  convert them at ingress.
-- Mandatory docstring describing meaning and invariants.
+```python
+from typing import assert_never
 
----
+class Order(BaseModel):
+    """Order that models complete e-commerce reality."""
+    id: OrderId = Field(default_factory=OrderId.generate)
+    customer: Customer
+    items: list[LineItem]
+    status: OrderStatus = OrderStatus.DRAFT
+    
+    # Events as first-class data
+    placed_at: Optional[datetime] = None
+    paid_at: Optional[datetime] = None  
+    shipped_at: Optional[datetime] = None
+    delivered_at: Optional[datetime] = None
+    cancelled_at: Optional[datetime] = None
+    
+    model_config = {"frozen": True, "extra": "forbid"}
+    
+    @field_validator('items')
+    @classmethod
+    def require_items(cls, v: list[LineItem]) -> list[LineItem]:
+        if not v:
+            raise ValueError("Orders must have items")
+        return v
+    
+    @computed_field
+    @property
+    def total(self) -> Money:
+        """Sum of items plus tax minus discounts."""
+        subtotal = sum((item.total for item in self.items), Money.zero())
+        return subtotal.add_tax_rate(self.customer.tax_rate)
+    
+    @computed_field
+    @property
+    def can_cancel(self) -> bool:
+        """Cancellation rules encoded in the model."""
+        match self.status:
+            case OrderStatus.DRAFT | OrderStatus.PLACED:
+                return True
+            case OrderStatus.PAID:
+                # Can cancel within 1 hour of payment
+                return (datetime.now() - self.paid_at).seconds < 3600
+            case OrderStatus.SHIPPED | OrderStatus.DELIVERED | OrderStatus.CANCELLED:
+                return False
+            case _:
+                assert_never(self.status)
+    
+    def place(self) -> "Order":
+        """State transition with business rules."""
+        if self.status != OrderStatus.DRAFT:
+            raise InvalidStateTransition(f"Cannot place order in {self.status} status")
+        
+        return self.model_copy(update={
+            'status': OrderStatus.PLACED,
+            'placed_at': datetime.now()
+        })
+    
+    def pay(self, payment: Payment) -> "Order":
+        """Payment transitions with validation."""
+        if self.status != OrderStatus.PLACED:
+            raise InvalidStateTransition("Can only pay placed orders")
+        
+        if payment.amount != self.total:
+            raise PaymentMismatch(f"Payment {payment.amount} doesn't match total {self.total}")
+            
+        return self.model_copy(update={
+            'status': OrderStatus.PAID,
+            'paid_at': datetime.now()
+        })
+```
 
-## 6 · Protocol Rules
+This single model teaches:
+- State machines (status transitions)
+- Business rules (cancellation within 1 hour)
+- Immutable updates (model_copy)
+- Temporal modeling (event timestamps)
+- Domain operations (place, pay, ship)
+- Computed intelligence (can_cancel)
 
-- Reside under `domain/protocols/`.
-- Use `typing.Protocol`; mark `@runtime_checkable` when needed.
-- Async signatures for I/O-bound behaviour.
-- No infrastructure details (drivers, connection strings).
-
----
-
-## 7 · Infrastructure Guidelines
-
-- Adapters must structurally conform to domain `Protocol`s.
-- `Generic[T] where T : BaseModel` allowed; never introspect/mutate `T`.
-- Infra-local protocols may exist but are never imported by domain.
-
----
-
-## 8 · Service / Orchestration Guidelines
-
-- Services coordinate adapters & side-effects; **no domain rules**.
-- Accept contracts (`BaseModel` / `Protocol`) as parameters.
-- Stateless and deterministic where practical.
-
----
-
-## 9 · Prohibited Constructs (❌ Hard Bans)
-
-| Category           | Ban                                                      |
-| ------------------ | -------------------------------------------------------- |
-| Untyped containers | `dict`, `list`, `tuple` without generics                 |
-| Weak typing        | `Any`, bare `object`, silent `typing.cast`               |
-| Silence flags      | `# type: ignore`, `# noqa` (except generated code)       |
-| Dynamic access     | `getattr` / `setattr` on domain models                   |
-| Implicit units     | Hidden ratio↔percent / basis-point maths                 |
-| Validator mutation | Adding/removing fields post-init                         |
-| Extra-allow        | `model_config = {"extra": "allow"}` in domain            |
-| Hidden defaults    | `defaultdict`, `.get(key, d)` or similar in domain logic |
-| External leakage   | Passing Pandas/Polars/NumPy objects into domain models   |
-
----
-
-## 10 · Mandatory Patterns
-
-- **Identifier strategy**: UUID-v7 for entities; ULID (event-time) for
-  time-series; hybrid `<uuid>:<ulid>` for entity+time.
-- If an ID can be absent, model a value-object (`MaybeId`) rather than
-  `Optional[str]`.
-- Convert external objects **once at ingress**.
-- Application logic deterministic; side-effects only in outer layers.
-
----
-
-## 11 · Lint & Static Analysis
-
-All Python source **must** pass the following tools before agent development completes:
-
-1. **mypy --strict** – full static type-checking; _zero_ tolerances for errors or unsafes.
-2. **ruff check PATH -v** – exhaustive lint suite (style, complexity, security, and type-hint hygiene).
-
-Enforcement strategy:
-
-- Any new lint rule introduced by Ruff **must** be added to `pyproject.toml` with either an explicit allow-list or a codebase-wide fix.
-- Type-suppressions (`# type: ignore`) are prohibited unless explicitly authorized by user
-
-
----
-
-## 12 · Testing Requirements
-
-- Unit tests target value-objects & computed fields—**no mocks**.
-- Adapter tests assert `Protocol` conformance.
-- Performance tests required for any `cached_property`.
+AI reading this model understands your entire order system.
 
 ---
 
-## 13 · Performance & Caching
+## Protocols: Capability Contracts
 
-- Computed fields may recalc; optimise only with profiling.
-- `cached_property` allowed only on frozen models with profiling proof.
+```python
+# What the domain needs (not how it's done)
+class TimeProvider(Protocol):
+    def now(self) -> datetime: ...
 
----
+class PricingEngine(Protocol):
+    async def calculate_discount(self, customer: Customer, items: list[LineItem]) -> Money: ...
 
-## 14 · Violation Protocol
-
-1. Reject the change.
-2. Fail CI citing violated rule section.
-3. Notify author for correction.
-4. Never silently downgrade enforcement.
-
----
-
-## 15 · Naming & File Conventions
-
-- Files: `value_objects.py`, `models.py`, `protocols.py`, `exceptions.py`.
-- Enum constants: `SCREAMING_SNAKE_CASE`.
-- Hybrid IDs use colon delimiter.
-
-3. Notify author for correction.
-4. Never silently downgrade enforcement.
+# Models use protocols, stay testable
+class DiscountedOrder(Order):
+    @computed_field
+    @property
+    def final_price(self, pricing: PricingEngine) -> Money:
+        discount = await pricing.calculate_discount(self.customer, self.items)
+        return self.total.subtract(discount)
+```
 
 ---
 
-## 15 · Naming & File Conventions
+## The Semantic Pyramid
 
-- Files: `value_objects.py`, `models.py`, `protocols.py`, `exceptions.py`.
-- Enum constants: `SCREAMING_SNAKE_CASE`.
-- Hybrid IDs use colon delimiter.
+```
+┌─────────────────┐
+│   Protocols     │  What we need
+├─────────────────┤
+│  Domain Models  │  Reality encoded  
+├─────────────────┤
+│  Value Objects  │  Semantic atoms
+└─────────────────┘
+```
+
+Build from the bottom. Each layer teaches the next.
+
+---
+
+## Why This Works
+
+1. **AI comprehends constraints**: When price can't be negative, AI won't generate negative prices
+2. **Types carry meaning**: `OrderId` vs `str` tells AI these aren't interchangeable
+3. **Operations encode rules**: `order.cancel()` exists means cancellation is possible
+4. **States prevent nonsense**: Can't ship a draft order if the type system won't allow it
+
+Your models become the spec. The documentation. The teacher.
+
+---
+
+## One Rule
+
+Make your models so intelligent that everything else—services, tests, infrastructure—becomes obvious mechanical work.
+
+When AI reads `Temperature`, it learns thermodynamics.  
+When AI reads `Order`, it learns your business.  
+When AI reads your domain, it operates within your reality.
+
+That's semantic architecture.
