@@ -1,0 +1,380 @@
+---
+description: Complete semantic patterns - every technique for intelligent domain models
+globs: ["**/*.py"]
+alwaysApply: true
+---
+
+# Complete Semantic Pattern System
+
+<core_mandate>
+These patterns work together to create models that teach reality. Use ALL of them.
+</core_mandate>
+
+<pattern name="no_naked_primitives" instruction="EVERY domain concept gets a type">
+```python
+# NEVER
+price: Decimal = Field(gt=0)  # What currency? What precision?
+
+# ALWAYS
+price: Money  # Type teaches currency rules, precision, operations
+temperature: Temperature  # Type teaches physics constraints
+email: Email  # Type teaches validation, masking, delivery
+```
+</pattern>
+
+<pattern name="enum_behaviors" instruction="Enums carry methods, NEVER use Literal">
+```python
+# NEVER
+status: Literal["draft", "paid", "shipped"]
+
+# ALWAYS
+class OrderStatus(Enum):
+    DRAFT = "draft"
+    PAID = "paid"
+    SHIPPED = "shipped"
+    
+    def can_transition_to(self, target: "OrderStatus") -> bool:
+        # State machine in the enum
+        transitions = {
+            self.DRAFT: [self.PAID],
+            self.PAID: [self.SHIPPED]
+        }
+        return target in transitions.get(self, [])
+    
+    @property
+    def is_terminal(self) -> bool:
+        return self == self.SHIPPED
+```
+</pattern>
+
+<pattern name="rich_value_objects" instruction="Value objects understand their domain">
+```python
+class Money(BaseModel):
+    amount: Decimal
+    currency: Currency
+    model_config = {"frozen": True}
+    
+    @field_validator('amount')
+    @classmethod
+    def round_to_currency(cls, v: Decimal, info: ValidationInfo) -> Decimal:
+        # Japanese Yen has no decimals
+        if info.data.get('currency') == Currency.JPY:
+            return v.quantize(Decimal('1'))
+        return v.quantize(Decimal('0.01'))
+    
+    def add(self, other: "Money") -> "Money":
+        if self.currency != other.currency:
+            raise ValueError(f"Cannot add {self.currency} to {other.currency}")
+        return Money(amount=self.amount + other.amount, currency=self.currency)
+    
+    def allocate(self, ratios: list[Decimal]) -> list["Money"]:
+        # No lost pennies - last allocation gets remainder
+        total = sum(ratios)
+        amounts = []
+        remaining = self.amount
+        
+        for ratio in ratios[:-1]:
+            share = (self.amount * ratio / total).quantize(Decimal('0.01'))
+            amounts.append(Money(amount=share, currency=self.currency))
+            remaining -= share
+            
+        amounts.append(Money(amount=remaining, currency=self.currency))
+        return amounts
+```
+</pattern>
+
+<pattern name="models_contain_all_logic" instruction="Business logic lives IN models, not services">
+```python
+class Order(BaseModel):
+    items: list[LineItem]
+    customer: Customer
+    status: OrderStatus = OrderStatus.DRAFT
+    model_config = {"frozen": True}
+    
+    # State transitions
+    def place(self) -> "Order":
+        if self.status != OrderStatus.DRAFT:
+            raise ValueError(f"Cannot place {self.status.value} order")
+        if not self.items:
+            raise ValueError("Cannot place empty order")
+        return self.model_copy(update={
+            "status": OrderStatus.PLACED,
+            "placed_at": datetime.now(UTC)
+        })
+    
+    # Business rules as computed fields
+    @computed_field
+    @property
+    def qualifies_for_free_shipping(self) -> bool:
+        return (
+            self.subtotal > Money(50, Currency.USD) or
+            self.customer.is_prime_member
+        )
+    
+    # Complex operations
+    async def validate_inventory(self, checker: InventoryChecker) -> list[InventoryIssue]:
+        issues = []
+        for item in self.items:
+            available = await checker.check_availability(item.product_id)
+            if available < item.quantity:
+                issues.append(InventoryIssue(
+                    product=item.product,
+                    requested=item.quantity,
+                    available=available
+                ))
+        return issues
+```
+</pattern>
+
+<pattern name="temporal_modeling" instruction="Rich timestamps tell the story">
+```python
+class Subscription(BaseModel):
+    # Not just status - full temporal history
+    created_at: datetime
+    activated_at: Optional[datetime] = None
+    suspended_at: Optional[datetime] = None
+    resumed_at: Optional[datetime] = None
+    cancelled_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    
+    @computed_field
+    @property
+    def status(self) -> SubscriptionStatus:
+        # Derive status from temporal data
+        now = datetime.now(UTC)
+        if self.cancelled_at:
+            return SubscriptionStatus.CANCELLED
+        elif self.suspended_at and not self.resumed_at:
+            return SubscriptionStatus.SUSPENDED
+        elif self.expires_at and now > self.expires_at:
+            return SubscriptionStatus.EXPIRED
+        elif self.activated_at:
+            return SubscriptionStatus.ACTIVE
+        return SubscriptionStatus.PENDING
+    
+    @computed_field
+    @property
+    def billing_periods(self) -> list[BillingPeriod]:
+        # Calculate from temporal data
+        if not self.activated_at:
+            return []
+        # Generate periods from activation to now/cancellation
+```
+</pattern>
+
+<pattern name="discriminated_unions" instruction="Type-safe polymorphism without isinstance">
+```python
+from pydantic import Discriminator
+from typing import Annotated
+
+class EmailNotification(BaseModel):
+    type: Literal["email"] = "email"
+    to: Email
+    subject: str
+    
+    async def send(self, sender: EmailSender) -> None:
+        await sender.send(self.to, self.subject, self.body)
+
+class SmsNotification(BaseModel):
+    type: Literal["sms"] = "sms"
+    to: PhoneNumber
+    message: str
+    
+    async def send(self, sender: SmsSender) -> None:
+        await sender.send(self.to, self.message)
+
+Notification = Annotated[
+    Union[EmailNotification, SmsNotification],
+    Discriminator('type')
+]
+
+# Usage - no isinstance needed!
+async def send_notification(notification: Notification, context: NotificationContext):
+    await notification.send(context.get_sender())
+```
+</pattern>
+
+<pattern name="validation_context" instruction="Complex validation with field relationships">
+```python
+class PriceRange(BaseModel):
+    min_price: Money
+    max_price: Money
+    
+    @field_validator('max_price')
+    @classmethod
+    def validate_range(cls, v: Money, info: ValidationInfo) -> Money:
+        if min_val := info.data.get('min_price'):
+            if v.currency != min_val.currency:
+                raise ValueError("Prices must be same currency")
+            if v < min_val:
+                raise ValueError("Max must be >= min")
+        return v
+
+class Discount(BaseModel):
+    percentage: Decimal = Field(gt=0, le=100)
+    min_purchase: Money
+    valid_from: datetime
+    valid_until: datetime
+    
+    @model_validator(mode='after')
+    def validate_dates(self) -> Self:
+        if self.valid_until <= self.valid_from:
+            raise ValueError("End date must be after start date")
+        return self
+```
+</pattern>
+
+<pattern name="smart_serialization" instruction="Control external representation">
+```python
+class User(BaseModel):
+    id: UserId
+    email: Email
+    internal_notes: Optional[str] = None
+    
+    @field_serializer('email', when_used='json')
+    def mask_email_external(self, v: Email) -> str:
+        return v.masked()  # "u***@example.com"
+    
+    @field_serializer('internal_notes', when_used='json')
+    def hide_internal(self, v: Any) -> Any:
+        return PydanticUndefined  # Remove from external API
+    
+    def model_dump_for_api(self) -> dict:
+        # Custom method for API responses
+        return self.model_dump(
+            mode='json',
+            exclude={'internal_notes'},
+            context={'api_version': 'v2'}
+        )
+```
+</pattern>
+
+<pattern name="service_orchestration" instruction="Services ONLY orchestrate">
+```python
+class OrderService:
+    # Services have no business logic!
+    async def checkout(self, order_id: OrderId) -> Order:
+        order = await self.repo.get(order_id)
+        
+        # Model decides
+        if not order.can_checkout:
+            raise ValueError("Order cannot checkout")
+        
+        # Service orchestrates infrastructure
+        payment = await self.payment_gateway.charge(order.payment_method, order.total)
+        
+        # Model processes result
+        order = order.complete_payment(payment)
+        
+        await self.repo.save(order)
+        await self.events.publish(order.events)
+        
+        return order
+```
+</pattern>
+
+<pattern name="no_dynamic_access" instruction="NEVER use getattr/setattr/hasattr">
+```python
+# NEVER
+if hasattr(order, 'discount'):
+    value = getattr(order, 'discount')
+
+# ALWAYS - make it explicit in the model
+class Order(BaseModel):
+    discount: Optional[Discount] = None
+    
+    @computed_field
+    @property
+    def final_price(self) -> Money:
+        if self.discount:
+            return self.subtotal.apply_discount(self.discount)
+        return self.subtotal
+```
+</pattern>
+
+<anti_patterns>
+NEVER DO:
+- isinstance() checks (use discriminated unions)
+- hasattr/getattr/setattr (use explicit fields)
+- Business logic in services (put in models)
+- Mutable models (use frozen + model_copy)
+- String literals for choices (use Enums)
+- Naked primitives (create value objects)
+- Optional without documenting None
+- Hidden defaults with .get()
+- Type: Any anywhere
+</anti_patterns>
+
+<complete_example>
+```python
+# This ONE model teaches everything about temperature
+class Temperature(BaseModel):
+    """Temperature that embodies physics knowledge."""
+    celsius: Decimal = Field(
+        ge=-273.15,  # Absolute zero
+        le=5.5e9,    # Core of sun
+        description="Temperature in Celsius"
+    )
+    measured_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    measurement_precision: MeasurementPrecision = MeasurementPrecision.STANDARD
+    
+    model_config = {"frozen": True}
+    
+    @field_validator('celsius')
+    @classmethod
+    def validate_precision(cls, v: Decimal, info: ValidationInfo) -> Decimal:
+        precision = info.data.get('measurement_precision', MeasurementPrecision.STANDARD)
+        return v.quantize(precision.decimal_places)
+    
+    # Conversions
+    @computed_field
+    @property
+    def fahrenheit(self) -> Decimal:
+        return self.celsius * Decimal('9/5') + 32
+    
+    @computed_field
+    @property
+    def kelvin(self) -> Decimal:
+        return self.celsius + Decimal('273.15')
+    
+    # Domain knowledge
+    @computed_field
+    @property
+    def water_state(self) -> WaterState:
+        if self.celsius <= 0:
+            return WaterState.SOLID
+        elif self.celsius >= 100:
+            return WaterState.GAS
+        return WaterState.LIQUID
+    
+    @computed_field
+    @property
+    def is_survivable_by_humans(self) -> bool:
+        return -40 <= self.celsius <= 50
+    
+    # Operations
+    def difference_from(self, other: "Temperature") -> "TemperatureDelta":
+        return TemperatureDelta(
+            degrees_celsius=abs(self.celsius - other.celsius)
+        )
+    
+    def would_trigger_phase_change(self, substance: Substance) -> bool:
+        transitions = substance.phase_transitions
+        return any(
+            abs(self.celsius - t.temperature_celsius) < Decimal('0.1')
+            for t in transitions
+        )
+    
+    # Invalid operations raise errors
+    def __add__(self, other: "Temperature") -> None:
+        raise TypeError(
+            "Cannot add temperatures. "
+            "Use Temperature.average() or create TemperatureDelta"
+        )
+```
+</complete_example>
+
+<final_rule>
+Every model should be so complete that reading it teaches the entire domain.
+When in doubt, add more intelligence to the model.
+</final_rule>
