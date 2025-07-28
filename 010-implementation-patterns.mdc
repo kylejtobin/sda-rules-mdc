@@ -1,0 +1,90 @@
+---
+description: Implementation patterns for semantic domain modeling
+globs: ["**/*.py"]
+alwaysApply: true
+---
+
+# Semantic Patterns
+
+<value_object_pattern>
+```python
+class Money(BaseModel):
+    amount: Decimal = Field(ge=0)
+    currency: Currency
+    model_config = {"frozen": True}
+    
+    def add(self, other: "Money") -> "Money":
+        if self.currency != other.currency:
+            raise ValueError("Currency mismatch")
+        return Money(amount=self.amount + other.amount, currency=self.currency)
+```
+</value_object_pattern>
+
+<domain_model_pattern>
+```python
+class Order(BaseModel):
+    id: OrderId
+    items: list[LineItem]
+    status: OrderStatus = OrderStatus.DRAFT
+    model_config = {"frozen": True}
+    
+    @computed_field
+    @property
+    def total(self) -> Money:
+        return sum((item.total for item in self.items), Money.zero())
+    
+    def place(self) -> "Order":
+        if self.status != OrderStatus.DRAFT:
+            raise ValueError("Only draft orders can be placed")
+        return self.model_copy(update={"status": OrderStatus.PLACED})
+```
+</domain_model_pattern>
+
+<enum_pattern>
+```python
+class OrderStatus(Enum):
+    DRAFT = "draft"
+    PLACED = "placed"
+    PAID = "paid"
+    
+    def can_transition_to(self, target: "OrderStatus") -> bool:
+        transitions = {
+            self.DRAFT: [self.PLACED],
+            self.PLACED: [self.PAID],
+        }
+        return target in transitions.get(self, [])
+```
+</enum_pattern>
+
+<protocol_pattern>
+```python
+class EmailSender(Protocol):
+    async def send(self, to: Email, subject: str, body: str) -> None: ...
+
+class User(BaseModel):
+    email: Email
+    
+    async def send_welcome(self, sender: EmailSender) -> None:
+        await sender.send(self.email, "Welcome!", "Thanks for joining")
+```
+</protocol_pattern>
+
+<service_pattern>
+```python
+class OrderService:
+    def __init__(self, repo: OrderRepository, payment: PaymentGateway):
+        self.repo = repo
+        self.payment = payment
+    
+    async def checkout(self, order_id: OrderId) -> Order:
+        order = await self.repo.get(order_id)
+        # Model decides, service orchestrates
+        if not order.can_checkout:
+            raise ValueError("Order cannot be checked out")
+        
+        result = await self.payment.charge(order.total)
+        paid_order = order.mark_paid(result.transaction_id)
+        await self.repo.save(paid_order)
+        return paid_order
+```
+</service_pattern>
