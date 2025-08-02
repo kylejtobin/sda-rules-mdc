@@ -1,5 +1,9 @@
 # 🧠 Semantic Domain Architecture
 
+[![Cursor Compatible](https://img.shields.io/badge/Cursor-Compatible-00A6FF.svg)](https://cursor.com)
+[![Rules: SDA](https://img.shields.io/badge/Rules-SDA-purple.svg)](https://github.com/kylejobin/sda-rules-mdc)
+[![MIT License](https://img.shields.io/github/license/kylejtobin/sda-rules-mdc)](LICENSE)
+
 Cursor rules that make your Pydantic models the single source of truth for business logic.
 
 ## Quick Start
