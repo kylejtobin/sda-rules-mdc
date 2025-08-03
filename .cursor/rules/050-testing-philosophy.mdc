@@ -1,0 +1,37 @@
+---
+description: SDA testing approach and philosophy
+globs: ["**/test*.py", "**/tests/**/*.py"]
+alwaysApply: false
+---
+
+# SDA Testing Philosophy
+
+## Core Principle
+"Test the domain intelligence, trust Pydantic for the rest."
+
+## The F1 Car Analogy
+SDA has sophisticated simplicity. Like an F1 car, complexity exists but it's:
+- **Necessary** - Every piece serves a purpose
+- **Elegant** - Complex interactions, simple interfaces
+- **Concentrated** - Intelligence focused in specific places
+
+## Test the Intelligence, Not the Plumbing
+**DO Test:**
+- Business logic in computed fields
+- Enum behavior and state transitions
+- Model decisions and validation rules
+- Domain-specific calculations
+- Conditional elimination logic
+- Where actual business intelligence lives
+
+**DON'T Test:**
+- Pydantic serialization/deserialization
+- Field validation (trust Pydantic)
+- State management (trust immutability)
+- Infrastructure plumbing
+
+## SDA Test Structure
+- Test cases as domain models that validate themselves
+- Dogfood SDA principles in test design
+- Concentrated tests for concentrated logic
+- Focus testing where domain intelligence is concentrated

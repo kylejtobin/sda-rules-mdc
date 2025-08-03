@@ -1,0 +1,33 @@
+---
+description: Core SDA architectural principles
+globs:
+alwaysApply: true
+---
+
+# Semantic Domain Architecture Core
+
+## Fundamental Principle
+Data drives behavior. Business logic lives with the data it operates on.
+
+## Architecture Pattern
+- **Models**: Domain intelligence (BaseModel with business logic)
+- **Services**: Infrastructure orchestration only (no business decisions)
+- **Protocols**: External dependency contracts
+
+## Separation of Concerns
+**Models decide, Services orchestrate:**
+- Models: "Can this order be shipped?" (business logic)
+- Services: "Ship this order via FedEx API" (infrastructure)
+- Never: Services making business decisions about models
+
+## Decision Framework
+- Primitive with domain meaning? → Value Object (BaseModel)
+- Finite choices with behavior? → Enum with methods
+- Derived from other fields? → @computed_field
+- External dependency? → Protocol
+- Infrastructure coordination? → Service
+
+## Immutability
+- All models frozen by default: `model_config = {"frozen": True}`
+- State changes via `model_copy(update={"field": new_value})`
+- No direct mutation of model fields

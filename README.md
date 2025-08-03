@@ -9,9 +9,14 @@ Cursor rules that make your Pydantic models the single source of truth for busin
 ## Quick Start
 
 ```bash
-# Install the rules
-mkdir -p .cursor/rules
-cp *.mdc .cursor/rules/
+# Clone and copy the rules to your project
+git clone https://github.com/kylejobin/sda-rules-mdc.git
+cp -r sda-rules-mdc/.cursor .
+
+# Or download and copy manually
+curl -L https://github.com/kylejobin/sda-rules-mdc/archive/main.zip -o sda-rules.zip
+unzip sda-rules.zip
+cp -r sda-rules-mdc-main/.cursor .
 
 # That's it. Cursor will now use these rules when generating Python code.
 ```
@@ -22,19 +27,39 @@ cp *.mdc .cursor/rules/
 
 ## What You Get
 
-Four rules that work together:
+Seven modular rules that work together:
 
-### [`000-semantic-domain-architecture.mdc`](000-semantic-domain-architecture.mdc)
-Core philosophy - why models should contain business logic. Establishes the mental model.
+### [`000-sda-core.mdc`](.cursor/rules/000-sda-core.mdc) *(Always Applied)*
+Core architectural principles - data drives behavior, models contain business logic. The foundation that always loads.
 
-### [`010-implementation-patterns.mdc`](010-implementation-patterns.mdc) 
-Concrete patterns - value objects, domain models, enums with behavior, protocols, thin services.
+### [`010-anti-patterns.mdc`](.cursor/rules/010-anti-patterns.mdc) *(Context-Aware)*
+The "Big Three" violations to eliminate: isinstance(), hasattr()/getattr(), and if/elif chains. Only loads when working with these patterns.
 
-### [`020-quick-decision-guide.mdc`](020-quick-decision-guide.mdc)
-Decision flowchart - "I see a primitive type" → "Make it a value object". Quick reference while coding.
+### [`020-conditional-elimination.mdc`](.cursor/rules/020-conditional-elimination.mdc) *(Context-Aware)*
+Strategies for transforming conditionals into type intelligence. Includes the "Transformation Test" framework.
 
-### [`030-complete-semantic-patterns.mdc`](030-complete-semantic-patterns.mdc)
-Advanced patterns - discriminated unions, cross-field validation, computed fields, temporal modeling.
+### [`030-field-patterns.mdc`](.cursor/rules/030-field-patterns.mdc) *(Context-Aware)*
+Critical distinctions for Pydantic field usage: when to use @computed_field vs regular fields, constraints, and validation patterns.
+
+### [`040-python-standards.mdc`](.cursor/rules/040-python-standards.mdc) *(Context-Aware)*
+Python-specific SDA requirements: type safety, modern syntax, package management, and code quality tools.
+
+### [`050-testing-philosophy.mdc`](.cursor/rules/050-testing-philosophy.mdc) *(Context-Aware)*
+"Test the domain intelligence, trust Pydantic for the rest." The F1 car analogy and focused testing approach.
+
+### [`060-reference-patterns.mdc`](.cursor/rules/060-reference-patterns.mdc) *(Context-Aware)*
+Concrete before/after transformation examples showing how to convert traditional patterns to SDA patterns.
+
+## Token-Efficient Design
+
+This modular structure follows Cursor IDE best practices for optimal AI assistance:
+
+- **Always Applied**: Only core principles (`000-sda-core.mdc`) load in every context
+- **Context-Aware**: Specific rules activate only when relevant to your current task
+- **Reduced Token Usage**: Smaller, focused rule sets leave more context window for actual code understanding
+- **Better Performance**: AI gets targeted guidance without information overload
+
+When you're working on field validation, only the field patterns load. When refactoring conditionals, only elimination strategies activate. This keeps the AI focused and effective.
 
 ---
 

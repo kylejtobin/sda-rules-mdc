@@ -1,0 +1,40 @@
+---
+description: Pydantic field usage patterns for SDA
+globs: ["**/*.py"]
+alwaysApply: false
+---
+
+# Field Patterns
+
+## Field vs Computed Field (Critical Distinction)
+**Regular Fields**: Values set directly or from external sources
+**@computed_field**: Values derived from other fields in the same model
+
+## Computed Field Rules
+Use `@computed_field` ONLY when:
+- Value derives from other fields in same model
+- Calculation changes when dependencies change
+- Value would be inconsistent if calculated elsewhere
+
+## Never Use @computed_field For (Common Mistake)
+- Constants or static configuration (`return 2` is NOT computation)
+- Values from external sources
+- Simple property access
+- Aliases without computation
+- Display constants (widths, limits, separators)
+
+## The Computed Field Test
+Ask: "If I change other fields, does this value change?"
+- Yes → `@computed_field`
+- No → Regular field
+
+## Field Constraints
+- Use `Field(ge=0, le=100)` for validation
+- Use `Field(min_length=1, max_length=200)` for strings
+- Use `default_factory` for mutable defaults
+- Type collections properly: `list[T]`, `dict[K, V]`
+
+## Optional Fields
+- Use `Optional` only when `None` has business meaning
+- Consider discriminated unions for state-dependent fields
+- Document what `None` means in the business context

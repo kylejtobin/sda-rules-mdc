@@ -1,0 +1,35 @@
+---
+description: SDA violations to avoid
+globs: ["**/*.py"]
+alwaysApply: false
+---
+
+# SDA Anti-Patterns
+
+## The Big Three (Eliminate Aggressively)
+- **isinstance()** - Replace with type dispatch or discriminated unions
+- **hasattr()/getattr()** - Only at true system boundaries (external APIs, unknown data structures)
+- **if/elif chains** - Transform into type intelligence or behavioral enums
+
+## Primitive Obsession
+- Never use naked primitives with domain meaning
+- `str` email → `Email(BaseModel)`
+- `int` user_id → `UserId(BaseModel)`
+- Raw dictionaries → Typed models
+
+## Enum Anti-Patterns
+- Never call `.value` on enums (defeats the purpose)
+- Use `StrEnum` for automatic string conversion
+- Add behavioral methods to enums, don't extract values
+
+## Model Anti-Patterns
+- **Anemic models** - Data without behavior
+- **@computed_field for constants** - Use regular fields for static values
+- **Business logic in services** - Logic belongs with the data
+
+## System Boundary Principle
+`isinstance/hasattr/getattr` is acceptable ONLY when:
+- Interfacing with external systems you don't control
+- Processing unknown data structures from APIs
+- Working with framework/library objects
+- NOT for your own domain objects

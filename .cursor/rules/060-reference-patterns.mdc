@@ -1,0 +1,68 @@
+---
+description: SDA transformation patterns and examples
+globs:
+alwaysApply: false
+---
+
+# SDA Reference Patterns
+
+## Conditional → Type Dispatch
+```python
+# ❌ Before: Conditional chains
+if violation_type == "isinstance_violations":
+    return IsInstanceFinding()
+elif violation_type == "hasattr_violations":
+    return HasAttrFinding()
+
+# ✅ After: Type dispatch with enum behavior
+class ViolationType(StrEnum):
+    isinstance_violations = "isinstance_violations"
+
+    def create_finding(self, node: ast.AST) -> Finding:
+        # Enum knows how to create its own findings
+        return Finding(type=self, node=node)
+```
+
+## isinstance() → Discriminated Unions
+```python
+# ❌ Before: Runtime type checking
+if isinstance(order, PaidOrder):
+    order.ship()
+
+# ✅ After: Type-safe pattern matching
+match order:
+    case PaidOrder(): order.ship()
+    case DraftOrder(): raise ValueError("Cannot ship draft")
+```
+
+## Primitive → Value Object
+```python
+# ❌ Before: Primitive obsession
+file_path: str = "src/models.py"
+if file_path.endswith(".py"): process_python_file()
+
+# ✅ After: Value object with domain intelligence
+class FilePath(BaseModel):
+    path: str
+
+    @computed_field
+    @property
+    def is_python_file(self) -> bool:
+        return self.path.endswith(".py")
+
+    @computed_field
+    @property
+    def module_name(self) -> str:
+        return self.path.split("/")[-1].replace(".py", "")
+```
+
+## External Boundary Pattern
+```python
+# ✅ Legitimate isinstance() usage
+def parse_ast_node(node: ast.AST) -> str:
+    # External system boundary - AST is not our domain
+    if isinstance(node, ast.Name):
+        return node.id
+    elif isinstance(node, ast.Constant):
+        return str(node.value)
+```

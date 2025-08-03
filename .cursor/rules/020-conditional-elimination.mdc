@@ -1,0 +1,37 @@
+---
+description: Transform conditionals into type intelligence
+globs: ["**/*.py"]
+alwaysApply: false
+---
+
+# Conditional Elimination Strategies
+
+## Type Dispatch Over If-Statements
+Replace conditional chains with dictionary-based dispatch:
+- Multiple `if` checks → Mapping with behavioral methods
+- `isinstance()` chains → Discriminated unions with literal tags
+- Status-based logic → Enum methods
+
+## Behavioral Enums Replace Conditionals
+Instead of checking enum values in if-statements:
+- Add methods to enums that know their own behavior
+- Use enum state transition methods
+- Eliminate external conditional logic
+
+## Discriminated Unions for State
+Replace optional fields + status checks:
+- Different states → Different types
+- State-specific operations → Type-specific methods
+- Compile-time safety over runtime checks
+
+## Model Intelligence Over External Logic
+- Validation functions → Model validators
+- Calculation functions → @computed_field
+- State checks → Model methods that know their own state
+
+## The Transformation Test
+Before writing `if`, ask:
+- Can this be type intelligence?
+- Can this be a model method?
+- Can this be enum behavior?
+- Can this be eliminated through better typing?
