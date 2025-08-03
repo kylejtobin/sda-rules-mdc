@@ -1,0 +1,51 @@
+---
+description: Pydantic's powerful tools that enable SDA patterns
+globs: ["**/*.py"]
+alwaysApply: false
+---
+
+# Pydantic Power Tools for SDA
+
+## Default to Pydantic Intelligence Over Procedural Checks
+
+### Replace isinstance() with Discriminated Unions
+- Use `Annotated[Union[...], Field(discriminator='type')]` for type dispatch
+- Let Pydantic handle type switching instead of manual checks
+- Tag types with `Literal` discriminator fields for automatic routing
+
+### Replace Manual Validation with Model Validators
+- Use `@field_validator` for single-field domain rules
+- Use `@model_validator` for cross-field business logic
+- Let models validate themselves instead of external validation functions
+
+### Replace Manual Serialization with Pydantic Operations
+- Use `model_validate()` instead of manual dict → object conversion
+- Use `model_dump()` instead of manual object → dict conversion
+- Use `TypeAdapter` to add Pydantic intelligence to any type
+
+## Core SDA Enablers
+
+### Domain Intelligence Tools
+- `@computed_field` for derived intelligence from other fields
+- `Field()` constraints for type-driven validation
+- `StrEnum` for behavioral enums with automatic conversion
+- `model_config = {"frozen": True}` for immutability
+- `model_copy(update={})` for immutable state transitions
+
+### Type System Power
+- `Self` for self-referential fluent APIs
+- `Generic` models for reusable domain patterns
+- Forward references for circular relationships
+- `Protocol` for external dependency contracts
+
+## The Pydantic Default Principle
+
+When you see:
+- **isinstance() checks** → Use discriminated unions
+- **Manual validation** → Use model validators
+- **External analyzers** → Use @computed_field domain intelligence
+- **Service classes** → Use domain methods on models
+- **Procedural transforms** → Use Pydantic serialization
+
+## Key Insight
+Pydantic eliminates the need for external logic by embedding intelligence directly in your domain models.

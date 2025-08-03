@@ -27,7 +27,7 @@ cp -r sda-rules-mdc-main/.cursor .
 
 ## What You Get
 
-Seven modular rules that work together:
+Eight modular rules that work together:
 
 ### [`000-sda-core.mdc`](.cursor/rules/000-sda-core.mdc) *(Always Applied)*
 Core architectural principles - data drives behavior, models contain business logic. The foundation that always loads.
@@ -49,6 +49,9 @@ Python-specific SDA requirements: type safety, modern syntax, package management
 
 ### [`060-reference-patterns.mdc`](.cursor/rules/060-reference-patterns.mdc) *(Context-Aware)*
 Concrete before/after transformation examples showing how to convert traditional patterns to SDA patterns.
+
+### [`070-pydantic-power-tools.mdc`](.cursor/rules/070-pydantic-power-tools.mdc) *(Context-Aware)*
+Pydantic's powerful tools that enable SDA patterns. Defaults to use discriminated unions, model validators, and domain intelligence instead of isinstance() checks and external validation.
 
 ## Token-Efficient Design
 
@@ -283,6 +286,34 @@ class PriceRange(BaseModel):
 ```
 
 The validator has access to all fields through `ValidationInfo`. Complex invariants become explicit constraints, impossible to violate regardless of how the model is constructed.
+
+## Key SDA Techniques
+
+### The Transformation Test
+Before writing any `if` statement, ask these questions:
+- Can this be type intelligence?
+- Can this be a model method?
+- Can this be enum behavior?
+- Can this be eliminated through better typing?
+
+This systematic approach transforms procedural code into declarative domain models.
+
+### System Boundary Principle
+The "Big Three" anti-patterns (isinstance(), hasattr()/getattr(), if/elif chains) are acceptable **ONLY** at true system boundaries:
+- Interfacing with external systems you don't control
+- Processing unknown data structures from APIs  
+- Working with framework/library objects
+- **NOT** for your own domain objects
+
+### Pydantic Power Tools
+Replace manual patterns with Pydantic intelligence:
+- **isinstance() checks** → Discriminated unions with `Field(discriminator='type')`
+- **Manual validation** → `@field_validator` and `@model_validator`
+- **External analyzers** → `@computed_field` domain intelligence
+- **Procedural transforms** → `model_validate()` and `model_dump()`
+
+### Testing Philosophy: The F1 Car
+SDA has sophisticated simplicity. Like an F1 car, complexity exists but it's necessary, elegant, and concentrated. Test the domain intelligence where it lives—in computed fields, enum behavior, and model decisions. Trust Pydantic for serialization, validation plumbing, and state management.
 
 ## Getting Started
 
