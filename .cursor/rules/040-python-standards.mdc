@@ -10,7 +10,7 @@ alwaysApply: false
 - Never use `Any` if avoidable
 - Never use `getattr` with Pydantic models
 - Use `from typing import TYPE_CHECKING` for type-only imports
-- Modern Python 3.13+ syntax: `str | None` not `Optional[str]`
+- Modern Python 3.12+ syntax: `str | None` not `Optional[str]`
 
 ## Package Management
 - Use `uv add` for adding packages
