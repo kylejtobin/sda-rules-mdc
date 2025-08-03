@@ -1,0 +1,30 @@
+---
+description: Python coding standards for SDA projects
+globs: ["**/*.py"]
+alwaysApply: false
+---
+
+# Python Standards for SDA
+
+## Type Safety (Non-Negotiable)
+- Never use `Any` if avoidable
+- Never use `getattr` with Pydantic models
+- Use `from typing import TYPE_CHECKING` for type-only imports
+- Modern Python 3.13+ syntax: `str | None` not `Optional[str]`
+
+## Package Management
+- Use `uv add` for adding packages
+- Use `uv add --dev` for development dependencies
+- Pydantic v2+ required
+
+## Code Quality Tools
+- `ruff -v` for linting issues
+- `mypy --strict` for type checking
+- Both must pass before committing
+
+## SDA-Specific Standards
+- All models frozen by default
+- Use protocols as interface contracts
+- Avoid generic dicts and Any types
+- Value objects over primitive obsession
+- Behavioral enums over string literals
