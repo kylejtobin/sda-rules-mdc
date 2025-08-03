@@ -75,7 +75,7 @@ Every mature codebase eventually develops the same disease. Your domain knowledg
 class Order:
     items: List[dict]
     total: float
-    status: str
+    status: str  # ❌ String literal instead of StrEnum
 
 # Logic scattered everywhere  
 class OrderService:
@@ -169,10 +169,10 @@ Each state transition returns a new instance. This isn't just functional program
 
 ### 4. Smart Enums
 
-Enums typically just name constants. But in your domain, those constants have relationships, rules, and behavior. Don't hide that knowledge in service classes:
+Never use string literals for domain concepts. Create StrEnum instead—these constants have relationships, rules, and behavior. Don't hide that knowledge in service classes:
 
 ```python
-class OrderStatus(Enum):
+class OrderStatus(StrEnum):  # ✅ StrEnum, not string literals
     DRAFT = "draft"
     PLACED = "placed"
     SHIPPED = "shipped"
@@ -186,7 +186,7 @@ class OrderStatus(Enum):
         return transitions.get(self, set())
 ```
 
-This enum doesn't just list statuses—it encodes your business workflow. The state machine lives where it belongs, making invalid transitions impossible to express.
+This StrEnum doesn't just list statuses—it encodes your business workflow. The state machine lives where it belongs, making invalid transitions impossible to express. **Never use bare strings like `"draft"` or `"placed"` directly in your code.**
 
 ## Real-World Example
 
@@ -201,9 +201,9 @@ class PaymentService:
             raise ValueError("Invalid amount")
         
         # Calculate fees
-        if payment_data['method'] == 'credit':
+        if payment_data['method'] == 'credit':  # ❌ String literal checks
             fee = payment_data['amount'] * 0.029 + 0.30
-        elif payment_data['method'] == 'ach':
+        elif payment_data['method'] == 'ach':  # ❌ String literal checks
             fee = 0.25
         # ... 200 more lines
 
@@ -249,12 +249,12 @@ Traditional polymorphism in Python requires isinstance checks, visitor patterns,
 from typing import Annotated, Discriminator
 
 class EmailNotification(BaseModel):
-    type: Literal["email"] = "email"
+    type: Literal["email"] = "email"  # ✅ Literal OK for discriminator tags
     to: Email
     subject: str
 
 class SmsNotification(BaseModel):
-    type: Literal["sms"] = "sms"
+    type: Literal["sms"] = "sms"  # ✅ Literal OK for discriminator tags
     to: PhoneNumber
     message: str
 
@@ -266,6 +266,8 @@ def send(notification: Notification) -> None:
 ```
 
 The discriminator field tells Pydantic which type to instantiate. No manual type checking, no visitor pattern, no match statements. The type system handles dispatch automatically.
+
+**Note**: `Literal` is acceptable for discriminator tags in unions, but use `StrEnum` for actual domain concepts with behavior.
 
 ### Cross-Field Validation
 

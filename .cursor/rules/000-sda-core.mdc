@@ -22,7 +22,7 @@ Data drives behavior. Business logic lives with the data it operates on.
 
 ## Decision Framework
 - Primitive with domain meaning? → Value Object (BaseModel)
-- Finite choices with behavior? → Enum with methods
+- Finite choices with behavior? → StrEnum with methods (never string literals)
 - Derived from other fields? → @computed_field
 - External dependency? → Protocol
 - Infrastructure coordination? → Service

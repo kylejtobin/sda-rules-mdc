@@ -27,4 +27,4 @@ alwaysApply: false
 - Use protocols as interface contracts
 - Avoid generic dicts and Any types
 - Value objects over primitive obsession
-- Behavioral enums over string literals
+- **StrEnum over string literals** - Never use bare strings for domain concepts

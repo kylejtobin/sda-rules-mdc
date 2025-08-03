@@ -28,7 +28,7 @@ alwaysApply: false
 ### Domain Intelligence Tools
 - `@computed_field` for derived intelligence from other fields
 - `Field()` constraints for type-driven validation
-- `StrEnum` for behavioral enums with automatic conversion
+- **`StrEnum` instead of string literals** - Domain concepts need behavioral enums
 - `model_config = {"frozen": True}` for immutability
 - `model_copy(update={})` for immutable state transitions
 

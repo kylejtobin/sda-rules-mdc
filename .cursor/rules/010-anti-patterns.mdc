@@ -19,7 +19,8 @@ alwaysApply: false
 
 ## Enum Anti-Patterns
 - Never call `.value` on enums (defeats the purpose)
-- Use `StrEnum` for automatic string conversion
+- **Never use string literals** - Create `StrEnum` instead
+- Use `StrEnum` for automatic string conversion and behavioral methods
 - Add behavioral methods to enums, don't extract values
 
 ## Model Anti-Patterns

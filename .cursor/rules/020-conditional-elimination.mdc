@@ -10,10 +10,11 @@ alwaysApply: false
 Replace conditional chains with dictionary-based dispatch:
 - Multiple `if` checks → Mapping with behavioral methods
 - `isinstance()` chains → Discriminated unions with literal tags
-- Status-based logic → Enum methods
+- Status-based logic → StrEnum methods (never string literals)
 
 ## Behavioral Enums Replace Conditionals
 Instead of checking enum values in if-statements:
+- **Create StrEnum, never use string literals** for domain concepts
 - Add methods to enums that know their own behavior
 - Use enum state transition methods
 - Eliminate external conditional logic
