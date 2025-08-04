@@ -10,10 +10,10 @@ alwaysApply: false
 "Test the domain intelligence, trust Pydantic for the rest."
 
 ## The F1 Car Analogy
-SDA has sophisticated simplicity. Like an F1 car, complexity exists but it's:
-- **Necessary** - Every piece serves a purpose
-- **Elegant** - Complex interactions, simple interfaces
-- **Concentrated** - Intelligence focused in specific places
+SDA has sophisticated simplicity. Like an F1 car, complexity is encoded in types:
+- **Necessary** - Every piece serves a type-driven purpose
+- **Elegant** - Complex discriminated unions, simple interfaces
+- **Concentrated** - Type intelligence focused in discriminated unions
 
 ## Test the Intelligence, Not the Plumbing
 **DO Test:**
@@ -21,7 +21,7 @@ SDA has sophisticated simplicity. Like an F1 car, complexity exists but it's:
 - Enum behavior and state transitions
 - Model decisions and validation rules
 - Domain-specific calculations
-- Conditional elimination logic
+- Discriminated union dispatch logic
 - Where actual business intelligence lives
 
 **DON'T Test:**
@@ -31,7 +31,7 @@ SDA has sophisticated simplicity. Like an F1 car, complexity exists but it's:
 - Infrastructure plumbing
 
 ## SDA Test Structure
-- Test cases as domain models that validate themselves
-- Dogfood SDA principles in test design
-- Concentrated tests for concentrated logic
-- Focus testing where domain intelligence is concentrated
+- Test cases as discriminated union domain models that validate themselves
+- Dogfood SDA discriminated union principles in test design
+- Concentrated tests for concentrated type intelligence
+- Focus testing where discriminated union intelligence is concentrated

@@ -8,38 +8,42 @@ alwaysApply: false
 
 ## Conditional → Type Dispatch
 ```python
-# ❌ Before: Conditional chains
-if violation_type == "isinstance_violations":
-    return IsInstanceFinding()
-elif violation_type == "hasattr_violations":
-    return HasAttrFinding()
+# ❌ Before: Procedural conditional chains
+violation_processor = get_violation_processor(violation_type)
 
 # ✅ After: Type dispatch with enum behavior
 class ViolationType(StrEnum):
     isinstance_violations = "isinstance_violations"
+    hasattr_violations = "hasattr_violations"
 
-    def create_finding(self, node: ast.AST) -> Finding:
+    def create_finding(self, node: CodeNode) -> Finding:
         # Enum knows how to create its own findings
         return Finding(type=self, node=node)
 ```
 
-## isinstance() → Discriminated Unions
+## Runtime Checking → Discriminated Unions
 ```python
-# ❌ Before: Runtime type checking
-if isinstance(order, PaidOrder):
-    order.ship()
+# ❌ Before: Runtime type checking with procedural logic
+order_processor = get_order_processor(order.status)
 
-# ✅ After: Type-safe pattern matching
-match order:
-    case PaidOrder(): order.ship()
-    case DraftOrder(): raise ValueError("Cannot ship draft")
+# ✅ After: Discriminated union with type dispatch
+class OrderStatus(StrEnum):
+    PAID = "paid"
+    DRAFT = "draft"
+    
+    def process(self, order: "Order") -> ProcessResult:
+        # Type-safe dispatch without generics
+        return {
+            OrderStatus.PAID: order.ship,
+            OrderStatus.DRAFT: order.reject_shipping
+        }[self](order)
 ```
 
 ## Primitive → Value Object
 ```python
 # ❌ Before: Primitive obsession
 file_path: str = "src/models.py"
-if file_path.endswith(".py"): process_python_file()
+# Conditional logic with primitives
 
 # ✅ After: Value object with domain intelligence
 class FilePath(BaseModel):
@@ -47,22 +51,31 @@ class FilePath(BaseModel):
 
     @computed_field
     @property
-    def is_python_file(self) -> bool:
-        return self.path.endswith(".py")
+    def file_type(self) -> FileType:
+        # Push string operations to type system
+        return FileType.from_path(self.path)
 
     @computed_field
     @property
-    def module_name(self) -> str:
-        return self.path.split("/")[-1].replace(".py", "")
+    def module_name(self) -> ModuleName:
+        # Domain intelligence in value objects
+        return ModuleName.from_path(self.path)
 ```
 
-## External Boundary Pattern
+## State → Discriminated Union Pattern
 ```python
-# ✅ Legitimate isinstance() usage
-def parse_ast_node(node: ast.AST) -> str:
-    # External system boundary - AST is not our domain
-    if isinstance(node, ast.Name):
-        return node.id
-    elif isinstance(node, ast.Constant):
-        return str(node.value)
+# ❌ Before: Procedural state logic
+state_processor = get_state_processor(current_state)
+
+# ✅ After: Discriminated union state dispatch
+class ProcessingState(StrEnum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    
+    def get_result(self, value: ProcessValue, default: ProcessValue) -> ProcessValue:
+        # Pure type dispatch without lambdas
+        return {
+            ProcessingState.ACTIVE: value,
+            ProcessingState.INACTIVE: default
+        }[self]
 ```

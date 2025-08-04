@@ -6,10 +6,10 @@ alwaysApply: false
 
 # SDA Anti-Patterns
 
-## The Big Three (Eliminate Aggressively)
-- **isinstance()** - Replace with type dispatch or discriminated unions
-- **hasattr()/getattr()** - Only at true system boundaries (external APIs, unknown data structures)
-- **if/elif chains** - Transform into type intelligence or behavioral enums
+## The Big Three (BANNED)
+- **isinstance()** - BANNED. USE DISCRIMINATED UNIONS.
+- **hasattr()/getattr()** - BANNED. USE DISCRIMINATED UNIONS.
+- **if/elif chains** - BANNED. USE DISCRIMINATED UNIONS WITH StrEnum.
 
 ## Primitive Obsession
 - Never use naked primitives with domain meaning
@@ -28,9 +28,6 @@ alwaysApply: false
 - **@computed_field for constants** - Use regular fields for static values
 - **Business logic in services** - Logic belongs with the data
 
-## System Boundary Principle
-`isinstance/hasattr/getattr` is acceptable ONLY when:
-- Interfacing with external systems you don't control
-- Processing unknown data structures from APIs
-- Working with framework/library objects
-- NOT for your own domain objects
+## Zero Tolerance Policy
+`isinstance/hasattr/getattr` is BANNED. No exceptions.
+Use discriminated unions for ALL branching logic.

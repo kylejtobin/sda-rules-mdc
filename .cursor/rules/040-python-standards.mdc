@@ -7,10 +7,10 @@ alwaysApply: false
 # Python Standards for SDA
 
 ## Type Safety (Non-Negotiable)
-- Never use `Any` if avoidable
-- Never use `getattr` with Pydantic models
+- `Any` is BANNED - use discriminated unions
+- `getattr` with Pydantic models is BANNED
 - Use `from typing import TYPE_CHECKING` for type-only imports
-- Modern Python 3.12+ syntax: `str | None` not `Optional[str]`
+- Use discriminated unions instead of `Optional` - ALWAYS prefer type intelligence
 
 ## Package Management
 - Use `uv add` for adding packages
@@ -25,6 +25,6 @@ alwaysApply: false
 ## SDA-Specific Standards
 - All models frozen by default
 - Use protocols as interface contracts
-- Avoid generic dicts and Any types
+- Generic dicts and Any types are BANNED
 - Value objects over primitive obsession
 - **StrEnum over string literals** - Never use bare strings for domain concepts

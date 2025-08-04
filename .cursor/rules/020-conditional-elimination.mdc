@@ -6,18 +6,19 @@ alwaysApply: false
 
 # Conditional Elimination Strategies
 
-## Type Dispatch Over If-Statements
-Replace conditional chains with dictionary-based dispatch:
-- Multiple `if` checks → Mapping with behavioral methods
-- `isinstance()` chains → Discriminated unions with literal tags
-- Status-based logic → StrEnum methods (never string literals)
+## DISCRIMINATED UNIONS FOR ALL BRANCHING
+ALL branching logic MUST use discriminated unions:
+- ANY `if` statement → Discriminated union with StrEnum
+- ANY `isinstance()` → BANNED. Use discriminated union with literal discriminator
+- ANY conditional logic → StrEnum behavioral methods
+- NO EXCEPTIONS
 
-## Behavioral Enums Replace Conditionals
-Instead of checking enum values in if-statements:
+## Behavioral Enums Are Mandatory
+Use StrEnum with behavioral methods:
 - **Create StrEnum, never use string literals** for domain concepts
 - Add methods to enums that know their own behavior
 - Use enum state transition methods
-- Eliminate external conditional logic
+- Zero external logic
 
 ## Discriminated Unions for State
 Replace optional fields + status checks:
@@ -30,9 +31,9 @@ Replace optional fields + status checks:
 - Calculation functions → @computed_field
 - State checks → Model methods that know their own state
 
-## The Transformation Test
-Before writing `if`, ask:
-- Can this be type intelligence?
-- Can this be a model method?
-- Can this be enum behavior?
-- Can this be eliminated through better typing?
+## The Type System Test
+Use discriminated union dispatch patterns:
+- Type intelligence with discriminated unions
+- Model methods with behavioral enums
+- Enum behavior with StrEnum handlers
+- Pydantic Field constraints for validation

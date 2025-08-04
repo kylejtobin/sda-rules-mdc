@@ -19,8 +19,8 @@ alwaysApply: false
 - Let models validate themselves instead of external validation functions
 
 ### Replace Manual Serialization with Pydantic Operations
-- Use `model_validate()` instead of manual dict → object conversion
-- Use `model_dump()` instead of manual object → dict conversion
+- Use `model_validate()` instead of manual data conversion
+- Use `model_dump()` instead of manual object serialization
 - Use `TypeAdapter` to add Pydantic intelligence to any type
 
 ## Core SDA Enablers
@@ -34,18 +34,17 @@ alwaysApply: false
 
 ### Type System Power
 - `Self` for self-referential fluent APIs
-- `Generic` models for reusable domain patterns
+- Discriminated unions for reusable domain patterns
 - Forward references for circular relationships
 - `Protocol` for external dependency contracts
 
-## The Pydantic Default Principle
+## 🚨 DISCRIMINATED UNION MANDATORY PRINCIPLE 🚨
 
-When you see:
-- **isinstance() checks** → Use discriminated unions
-- **Manual validation** → Use model validators
-- **External analyzers** → Use @computed_field domain intelligence
-- **Service classes** → Use domain methods on models
-- **Procedural transforms** → Use Pydantic serialization
+EVERY TIME you think about branching:
+- **ANY isinstance()** → BANNED. Use discriminated union (Annotated[Union[...], Field(discriminator='type')])
+- **ANY if/elif** → BANNED. Use discriminated union with StrEnum behavioral methods
+- **ANY conditional** → BANNED. Use discriminated union type dispatch
+- **ANY match/case** → BANNED. Use discriminated union enum handlers
 
 ## Key Insight
 Pydantic eliminates the need for external logic by embedding intelligence directly in your domain models.
