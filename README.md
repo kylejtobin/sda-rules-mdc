@@ -77,11 +77,11 @@ When you're working on field validation, only the field patterns load. When refa
 Every mature codebase eventually develops the same disease. Your domain knowledge—the rules that make your business unique—gets scattered across service classes, validators, utilities, and worse, implicit assumptions in UI code. Meanwhile, your domain models become hollow shells, mere data transfer objects that know nothing about the reality they represent.
 
 ```python
-# Anemic model
+# ❌ Anemic model with SDA violations
 class Order:
-    items: List[dict]
-    total: float
-    status: str  # ❌ String literal instead of StrEnum
+    items: List[dict]  # ❌ BANNED: Generic dict instead of domain models
+    total: float  # ❌ BANNED: Primitive instead of Money value object
+    status: str  # ❌ BANNED: String literal instead of StrEnum
 
 # Logic scattered everywhere  
 class OrderService:
@@ -109,9 +109,27 @@ class Order(BaseModel):
         """Order calculates its own total."""
         return sum((item.total for item in self.items), Money.zero())
     
-    def can_transition_to(self, new_status: OrderStatus) -> bool:
-        """Order knows valid transitions."""
-        return new_status in self.status.valid_transitions()
+    def get_transition_state(self, new_status: OrderStatus) -> TransitionState:
+        """Order knows valid transitions as types."""
+        return self.status.get_transition_state(new_status)
+
+class TransitionState(StrEnum):
+    VALID = "valid"
+    INVALID = "invalid"
+    
+    def execute_transition(self, order: "Order", new_status: OrderStatus) -> "Order":
+        # Pure method dispatch without lambdas
+        handlers = {
+            TransitionState.VALID: self._execute_valid_transition,
+            TransitionState.INVALID: self._reject_invalid_transition
+        }
+        return handlers[self](order, new_status)
+    
+    def _execute_valid_transition(self, order: "Order", new_status: OrderStatus) -> "Order":
+        return order.model_copy(update={"status": new_status})
+    
+    def _reject_invalid_transition(self, order: "Order", new_status: OrderStatus) -> "Order":
+        raise ValueError(f"Invalid transition to {new_status}")
 ```
 
 The shift is profound. Your models stop being passive data holders and become active participants that encode your business reality. Services shrink to mere orchestrators. Tests simplify because models validate themselves. And most importantly, your domain logic lives in one place—with the data it governs.
@@ -149,8 +167,20 @@ class Temperature(BaseModel):
     
     @computed_field
     @property
-    def is_freezing(self) -> bool:
-        return self.celsius <= 0
+    def temperature_state(self) -> TemperatureState:
+        return TemperatureState.from_celsius(self.celsius)
+        
+class TemperatureState(StrEnum):
+    FREEZING = "freezing"
+    ABOVE_FREEZING = "above_freezing"
+    
+    @classmethod
+    def from_celsius(cls, celsius: Decimal) -> 'TemperatureState':
+        # Pure boolean dispatch
+        return {
+            True: cls.FREEZING,
+            False: cls.ABOVE_FREEZING
+        }[celsius <= 0]
 ```
 
 This model doesn't just store temperature—it understands temperature. It knows about absolute zero, unit conversions, and state transitions. When behavior lives with data, impossible operations become unrepresentable.
@@ -162,13 +192,29 @@ Mutable state is where bugs breed. When objects change underneath you, reasoning
 ```python
 def place_order(self) -> "Order":
     """Return new state instead of mutating."""
-    if self.status != OrderStatus.DRAFT:
-        raise ValueError("Can only place draft orders")
+    # Status validation handled by discriminated union dispatch
+    return self.status.place_order(self)
+
+class OrderStatus(StrEnum):
+    DRAFT = "draft"
+    PLACED = "placed"
     
-    return self.model_copy(update={
-        "status": OrderStatus.PLACED,
-        "placed_at": datetime.now()
-    })
+    def place_order(self, order: "Order") -> "Order":
+        # Pure method dispatch without lambdas
+        handlers = {
+            OrderStatus.DRAFT: self._place_draft_order,
+            OrderStatus.PLACED: self._reject_placed_order
+        }
+        return handlers[self](order)
+    
+    def _place_draft_order(self, order: "Order") -> "Order":
+        return order.model_copy(update={
+            "status": OrderStatus.PLACED,
+            "placed_at": datetime.now()
+        })
+    
+    def _reject_placed_order(self, order: "Order") -> "Order":
+        raise ValueError("Order already placed")
 ```
 
 Each state transition returns a new instance. This isn't just functional programming dogma—it enables time-travel debugging, safe concurrent access, and clear audit trails. Your models become a sequence of immutable states rather than a mutable object with hidden history.
@@ -183,13 +229,31 @@ class OrderStatus(StrEnum):  # ✅ StrEnum, not string literals
     PLACED = "placed"
     SHIPPED = "shipped"
     
-    def valid_transitions(self) -> set["OrderStatus"]:
-        transitions = {
-            self.DRAFT: {self.PLACED},
-            self.PLACED: {self.SHIPPED},
-            self.SHIPPED: set()
-        }
-        return transitions.get(self, set())
+    def get_transition_state(self, new_status: "OrderStatus") -> TransitionState:
+        # Pure enum dispatch instead of dict.get() conditional
+        return {
+            self.DRAFT: self._check_draft_transition,
+            self.PLACED: self._check_placed_transition,
+            self.SHIPPED: self._check_shipped_transition
+        }[self](new_status)
+    
+    def _check_draft_transition(self, new_status: "OrderStatus") -> TransitionState:
+        valid_statuses = {self.PLACED}
+        return {
+            True: TransitionState.VALID,
+            False: TransitionState.INVALID
+        }[new_status in valid_statuses]
+    
+    def _check_placed_transition(self, new_status: "OrderStatus") -> TransitionState:
+        valid_statuses = {self.SHIPPED}
+        return {
+            True: TransitionState.VALID,
+            False: TransitionState.INVALID
+        }[new_status in valid_statuses]
+    
+    def _check_shipped_transition(self, new_status: "OrderStatus") -> TransitionState:
+        # Shipped is terminal state - no valid transitions
+        return TransitionState.INVALID
 ```
 
 This StrEnum doesn't just list statuses—it encodes your business workflow. The state machine lives where it belongs, making invalid transitions impossible to express. **Never use bare strings like `"draft"` or `"placed"` directly in your code.**
@@ -199,33 +263,27 @@ This StrEnum doesn't just list statuses—it encodes your business workflow. The
 Theory is nice, but let's see the transformation in practice. Here's a payment processing system, before and after:
 
 ```python
-# Before: Logic in services
+# ❌ Before: Conditional logic in services
 class PaymentService:
     def process_payment(self, payment_data: dict) -> dict:
-        # Validate amount
+        # ❌ BANNED: Manual validation with conditionals
         if payment_data['amount'] <= 0:
             raise ValueError("Invalid amount")
         
-        # Calculate fees
-        if payment_data['method'] == 'credit':  # ❌ String literal checks
+        # ❌ BANNED: String literal conditionals
+        if payment_data['method'] == 'credit':
             fee = payment_data['amount'] * 0.029 + 0.30
-        elif payment_data['method'] == 'ach':  # ❌ String literal checks
+        elif payment_data['method'] == 'ach':
             fee = 0.25
-        # ... 200 more lines
+        # ... 200 more lines of conditional hell
 
 # After: Logic in models  
 class Payment(BaseModel):
-    amount: Money
+    # ✅ Field constraints replace manual validation
+    amount: Money = Field(gt=0, description="Positive payment amount")
     method: PaymentMethod
     
     model_config = {"frozen": True}
-    
-    @field_validator('amount')
-    @classmethod
-    def validate_positive(cls, v: Money) -> Money:
-        if v.amount <= 0:
-            raise ValueError("Payment amount must be positive")
-        return v
     
     @computed_field
     @property
@@ -284,13 +342,53 @@ class PriceRange(BaseModel):
     min_price: Money
     max_price: Money
     
-    @field_validator('max_price')
+    @model_validator(mode='after')
+    def validate_range(self) -> 'PriceRange':
+        # ✅ Type dispatch instead of conditionals
+        validation_state = ValidationState.from_prices(self.min_price, self.max_price)
+        return validation_state.validate(self)
+        
+class ValidationState(StrEnum):
+    VALID = "valid"
+    INVALID = "invalid"
+    
     @classmethod
-    def validate_range(cls, v: Money, info: ValidationInfo) -> Money:
-        if min_price := info.data.get('min_price'):
-            if v < min_price:
-                raise ValueError("Max price must be >= min price")
-        return v
+    def from_prices(cls, min_price: Money, max_price: Money) -> 'ValidationState':
+        # Type dispatch instead of conditional
+        comparison_result = ComparisonResult.from_values(max_price, min_price)
+        return comparison_result.to_validation_state()
+
+class ComparisonResult(StrEnum):
+    GREATER_OR_EQUAL = "greater_or_equal"
+    LESS_THAN = "less_than"
+    
+    @classmethod
+    def from_values(cls, a: Money, b: Money) -> 'ComparisonResult':
+        # Pure boolean dispatch without ternary
+        return {
+            True: cls.GREATER_OR_EQUAL,
+            False: cls.LESS_THAN
+        }[a >= b]
+    
+    def to_validation_state(self) -> ValidationState:
+        return {
+            ComparisonResult.GREATER_OR_EQUAL: ValidationState.VALID,
+            ComparisonResult.LESS_THAN: ValidationState.INVALID
+        }[self]
+    
+    def validate(self, price_range: 'PriceRange') -> 'PriceRange':
+        # Pure method dispatch without lambdas
+        handlers = {
+            ValidationState.VALID: self._return_valid_range,
+            ValidationState.INVALID: self._reject_invalid_range
+        }
+        return handlers[self](price_range)
+    
+    def _return_valid_range(self, price_range: 'PriceRange') -> 'PriceRange':
+        return price_range
+    
+    def _reject_invalid_range(self, price_range: 'PriceRange') -> 'PriceRange':
+        raise ValueError("Max price must be >= min price")
 ```
 
 The validator has access to all fields through `ValidationInfo`. Complex invariants become explicit constraints, impossible to violate regardless of how the model is constructed.
@@ -302,7 +400,7 @@ The validator has access to all fields through `ValidationInfo`. Complex invaria
 
 **BANNED CONSTRUCTS (ZERO TOLERANCE):**
 - `if/elif/else` statements → Use discriminated unions with StrEnum
-- `isinstance()` checks → Use discriminated union with literal discriminator  
+- `isinstance()` checks → Use discriminated union with type-based dispatch
 - `match/case` statements → Use discriminated union enum handlers
 - `try/except` → Use Result types with discriminated unions
 
