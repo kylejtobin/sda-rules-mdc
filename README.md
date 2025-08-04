@@ -4,484 +4,553 @@
 [![Rules: SDA](https://img.shields.io/badge/Rules-SDA-purple.svg)](https://github.com/kylejobin/sda-rules-mdc)
 [![MIT License](https://img.shields.io/github/license/kylejtobin/sda-rules-mdc)](LICENSE)
 
-Cursor rules that make your Pydantic models the single source of truth for business logic.
+Python domain modeling that doesn't suck. Cursor rules included.
 
 ## Quick Start
 
 ```bash
-# Clone and copy the rules to your project
 git clone https://github.com/kylejobin/sda-rules-mdc.git
 cp -r sda-rules-mdc/.cursor .
-
-# Or download and copy manually
-curl -L https://github.com/kylejobin/sda-rules-mdc/archive/main.zip -o sda-rules.zip
-unzip sda-rules.zip
-cp -r sda-rules-mdc-main/.cursor .
-
-# That's it. Cursor will now use these rules when generating Python code.
 ```
 
-**Using [Cursor](https://cursor.com)?** These rules help AI understand that your models should be intelligent domain objects, not anemic data bags.
-
-**Not using Cursor?** Treat these as architecture guidelines for building semantic domain models.
-
-## What You Get
-
-Ten modular rules that work together:
-
-### [`000-sda-core.mdc`](.cursor/rules/000-sda-core.mdc) *(Always Applied)*
-Core architectural principles - data drives behavior, models contain business logic. The foundation that always loads.
-
-### [`005-discriminated-unions-nuclear.mdc`](.cursor/rules/005-discriminated-unions-nuclear.mdc) *(Always Applied)*
-🚨 **DISCRIMINATED UNIONS OR DEATH** 🚨 - The nuclear approach to eliminating ALL conditionals. Zero tolerance for if/elif/isinstance/match/try-except. Discriminated unions for everything.
-
-### [`010-anti-patterns.mdc`](.cursor/rules/010-anti-patterns.mdc) *(Context-Aware)*
-The "Big Three" violations to eliminate: isinstance(), hasattr()/getattr(), and if/elif chains. Zero tolerance policy.
-
-### [`020-conditional-elimination.mdc`](.cursor/rules/020-conditional-elimination.mdc) *(Context-Aware)*
-Strategies for transforming conditionals into type intelligence. Type system test framework.
-
-### [`030-field-patterns.mdc`](.cursor/rules/030-field-patterns.mdc) *(Context-Aware)*
-Critical distinctions for Pydantic field usage: when to use @computed_field vs regular fields, constraints, and validation patterns.
-
-### [`040-python-standards.mdc`](.cursor/rules/040-python-standards.mdc) *(Context-Aware)*
-Python-specific SDA requirements: type safety, modern syntax, package management, and code quality tools.
-
-### [`050-testing-philosophy.mdc`](.cursor/rules/050-testing-philosophy.mdc) *(Context-Aware)*
-"Test the domain intelligence, trust Pydantic for the rest." The F1 car analogy and focused testing approach.
-
-### [`060-reference-patterns.mdc`](.cursor/rules/060-reference-patterns.mdc) *(Context-Aware)*
-Concrete before/after transformation examples showing how to convert traditional patterns to SDA patterns.
-
-### [`070-pydantic-power-tools.mdc`](.cursor/rules/070-pydantic-power-tools.mdc) *(Context-Aware)*
-Pydantic's powerful tools that enable SDA patterns. Discriminated union mandatory principle.
-
-### [`080-service-architecture.mdc`](.cursor/rules/080-service-architecture.mdc) *(Context-Aware)*
-Service architecture patterns for eliminating conditionals in service design and external module interfaces.
-
-### [`090-boundary-intelligence.mdc`](.cursor/rules/090-boundary-intelligence.mdc) *(Context-Aware)*
-Patterns for handling external system boundaries without compromising domain purity. Extract intelligence from external systems rather than fighting them.
-
-## Token-Efficient Design
-
-This modular structure follows Cursor IDE best practices for optimal AI assistance:
-
-- **Always Applied**: Only core principles (`000-sda-core.mdc`) load in every context
-- **Context-Aware**: Specific rules activate only when relevant to your current task
-- **Reduced Token Usage**: Smaller, focused rule sets leave more context window for actual code understanding
-- **Better Performance**: AI gets targeted guidance without information overload
-
-When you're working on field validation, only the field patterns load. When refactoring conditionals, only elimination strategies activate. This keeps the AI focused and effective.
-
----
+Now Cursor understands that your models should actually model things.
 
 ## Why This Exists
 
-Every mature codebase eventually develops the same disease. Your domain knowledge—the rules that make your business unique—gets scattered across service classes, validators, utilities, and worse, implicit assumptions in UI code. Meanwhile, your domain models become hollow shells, mere data transfer objects that know nothing about the reality they represent.
+Picture this: It's 2am. Production is on fire. You're tracing through a bug that makes no sense. The stack trace leads you through `OrderService`, then `OrderValidator`, then `OrderHelper`, then `order_utils.py`, and finally you find it—the actual business logic, scattered across seven files like someone threw it in a blender.
+
+The bug? Someone passed a price as a string instead of a float. But really, the bug was that your Order model doesn't know what an order is. It's just a property bag, a glorified dictionary with type hints. The actual intelligence—what makes an order an *order*—lives everywhere except where it should.
+
+We've been writing code backwards. We put data in models and logic in services because someone told us about "separation of concerns" in 2003 and we never questioned it. But here's the thing: **the biggest concern is that your domain logic has no home**.
+
+Remember when "enterprise architecture" meant adding seventeen layers of abstraction to hide a database query? When every simple operation required a Factory that created a Manager that used a Service that called a Repository that wrapped a DAO? We traded simplicity for ceremony and called it "best practices."
+
+Well, I'm done pretending that's sane.
+
+## What You Get
+
+Ten modular rules that teach Cursor (and you) how to write models that model:
+
+### Core Rules (Always Active)
+- **[`000-sda-core.mdc`](.cursor/rules/000-sda-core.mdc)** - The philosophy. Models contain business logic. Services orchestrate.
+- **[`005-discriminated-unions-nuclear.mdc`](.cursor/rules/005-discriminated-unions-nuclear.mdc)** - The pattern that kills conditionals. No more if/elif chains.
+
+### Context-Aware Rules (Load When Needed)
+- **[`010-anti-patterns.mdc`](.cursor/rules/010-anti-patterns.mdc)** - The unholy trinity: isinstance(), hasattr(), and if/elif chains
+- **[`020-conditional-elimination.mdc`](.cursor/rules/020-conditional-elimination.mdc)** - Turn branching logic into type dispatch
+- **[`030-field-patterns.mdc`](.cursor/rules/030-field-patterns.mdc)** - When to use @computed_field vs regular fields
+- **[`040-python-standards.mdc`](.cursor/rules/040-python-standards.mdc)** - Type safety and modern Python patterns
+- **[`050-testing-philosophy.mdc`](.cursor/rules/050-testing-philosophy.mdc)** - Test behavior, not plumbing
+- **[`060-reference-patterns.mdc`](.cursor/rules/060-reference-patterns.mdc)** - Before/after examples that actually teach
+- **[`070-pydantic-power-tools.mdc`](.cursor/rules/070-pydantic-power-tools.mdc)** - Advanced Pydantic that enables it all
+- **[`090-boundary-intelligence.mdc`](.cursor/rules/090-boundary-intelligence.mdc)** - Dealing with the messy outside world
+
+### Why This Structure?
+
+Cursor's context window isn't infinite. Loading every rule for every file is like bringing an entire library to look up one fact. This modular design means:
+- Working on validation? Only validation patterns load
+- Refactoring conditionals? Only elimination strategies activate  
+- Core principles always there, specifics when needed
+- More room for your actual code in the context
+
+It's the difference between a focused assistant and one that's read too much and can't shut up about it.
+
+## The Core Idea
+
+Your models should be domain experts, not data buckets.
 
 ```python
-# ❌ Anemic model with SDA violations
-class Order:
-    items: List[dict]  # ❌ BANNED: Generic dict instead of domain models
-    total: float  # ❌ BANNED: Primitive instead of Money value object
-    status: str  # ❌ BANNED: String literal instead of StrEnum
-
-# Logic scattered everywhere  
-class OrderService:
-    def calculate_total(self, order): ...
-    def validate_status_change(self, order, new_status): ...
-    def check_inventory(self, order): ...
-    def apply_discounts(self, order): ...
+# What we write (data bucket)
+class Temperature:
+    celsius: float
+    
+# What we should write (domain expert)
+class Temperature(BaseModel):
+    celsius: Decimal = Field(ge=-273.15)  # Knows absolute zero
+    
+    @property
+    def fahrenheit(self) -> Decimal:
+        return self.celsius * Decimal('1.8') + 32
+    
+    @property
+    def state_of_water(self) -> WaterState:
+        if self.celsius <= 0:
+            return WaterState.SOLID
+        elif self.celsius >= 100:
+            return WaterState.GAS
+        return WaterState.LIQUID
 ```
 
-This pattern emerged from N-tier architecture, where models couldn't have dependencies. But that constraint doesn't exist anymore. Modern frameworks like Pydantic give us models that can validate, compute, and transform. Yet we still write anemic models out of habit.
+One teaches you about temperature. The other one just... holds a number.
 
-Semantic Domain Architecture breaks that habit. Your models become intelligent agents that understand their domain:
+## The Patterns That Matter
+
+### 1. Rich Types Over Primitive Obsession
+
+Every time you type `amount: float`, somewhere a developer cries debugging a currency mismatch. I've seen production systems lose thousands of dollars because someone forgot that the payment gateway expects cents but the invoice system uses dollars. True story.
 
 ```python
-# Semantic model
+# The bug factory
+def process_payment(amount: float, currency: str) -> float:
+    # Hope everyone remembers amount is in cents!
+    # Hope everyone passes currency in the same format!
+    # Hope no one does math without considering currency!
+    ...
+
+# The domain model
+class Money(BaseModel):
+    amount: Decimal
+    currency: Currency
+    
+    def __add__(self, other: Money) -> Money:
+        if self.currency != other.currency:
+            raise ValueError(f"Cannot add {self.currency} to {other.currency}")
+        return Money(amount=self.amount + other.amount, currency=self.currency)
+    
+    def split_evenly(self, ways: int) -> list[Money]:
+        """No lost pennies in rounding."""
+        base_amount = (self.amount / ways).quantize(Decimal('0.01'))
+        remainder = self.amount - (base_amount * ways)
+        
+        splits = [Money(base_amount, self.currency) for _ in range(ways)]
+        # Add the remainder pennies to the first split
+        if remainder:
+            splits[0] = Money(base_amount + remainder, self.currency)
+        return splits
+```
+
+Now `money + money` either works correctly or fails loudly. No silent bugs. No "wait, was that in cents or dollars?" at 3am.
+
+### 2. Behavior Lives With Data
+
+Stop writing this:
+
+```python
+class Order:
+    items: list[dict]
+    status: str
+
+class OrderService:
+    def calculate_total(self, order: Order) -> float:
+        # 50 lines of logic
+    
+    def can_cancel(self, order: Order) -> bool:
+        # 30 lines of logic
+    
+    def apply_discount(self, order: Order, discount: float) -> float:
+        # 40 lines of logic
+```
+
+Write this:
+
+```python
 class Order(BaseModel):
     items: list[LineItem]
     status: OrderStatus
     
-    model_config = {"frozen": True}
-    
     @computed_field
     @property
     def total(self) -> Money:
-        """Order calculates its own total."""
         return sum((item.total for item in self.items), Money.zero())
     
-    def get_transition_state(self, new_status: OrderStatus) -> TransitionState:
-        """Order knows valid transitions as types."""
-        return self.status.get_transition_state(new_status)
+    def cancel(self) -> "Order":
+        return self.status.cancel_order(self)
+```
 
-class TransitionState(StrEnum):
-    VALID = "valid"
-    INVALID = "invalid"
+The order knows how to be an order. Revolutionary concept, I know.
+
+You know what's wild? Half the developers I show this to act like I just invented fire. "You can put methods... on your models?" Yes. Yes you can. It's been possible since roughly 1967 when Ole-Johan Dahl and Kristen Nygaard invented object-oriented programming. We just... forgot.
+
+### 3. Make Invalid States Unrepresentable (Discriminated Unions)
+
+This is the big one. The pattern that changes everything. Instead of defensive programming, use types that make bugs impossible.
+
+Remember every time you've written code like this?
+
+```python
+# The defensive programming nightmare
+def send_notification(user_data: dict) -> None:
+    # First, let's check if we have what we need...
+    if "email" in user_data:
+        # But wait, is it actually an email?
+        if "@" in user_data["email"]:  # Top-tier email validation right here
+            # Do we have a subject?
+            subject = user_data.get("email_subject", "No Subject")
+            # What about the body?
+            body = user_data.get("email_body", "")
+            send_email(user_data["email"], subject, body)
+    elif "phone" in user_data:
+        # Is it a valid phone number? Who knows!
+        send_sms(user_data["phone"], user_data.get("sms_message", ""))
+    else:
+        # The famous "this should never happen" comment
+        raise ValueError("No contact method")  # Narrator: It happened.
+```
+
+versus:
+
+```python
+# The SDA way: discriminated unions
+class EmailNotification(BaseModel):
+    type: Literal["email"] = "email"
+    address: EmailAddress
+    subject: str = Field(min_length=1)
+    body: str
     
-    def execute_transition(self, order: "Order", new_status: OrderStatus) -> "Order":
-        # Pure method dispatch without lambdas
-        handlers = {
-            TransitionState.VALID: self._execute_valid_transition,
-            TransitionState.INVALID: self._reject_invalid_transition
+    def send(self) -> NotificationResult:
+        # Can't forget the subject - it's required!
+        # Can't pass an invalid email - EmailAddress validates!
+        # Can't mix up SMS and email - they're different types!
+        return send_email(self.address, self.subject, self.body)
+
+class SmsNotification(BaseModel):
+    type: Literal["sms"] = "sms"
+    phone: PhoneNumber
+    message: str = Field(max_length=160)  # Remember SMS limits?
+    
+    def send(self) -> NotificationResult:
+        return send_sms(self.phone, self.message)
+
+Notification = Annotated[
+    Union[EmailNotification, SmsNotification],
+    Field(discriminator="type")
+]
+
+# Now this is impossible to mess up
+def send_notification(notification: Notification) -> NotificationResult:
+    return notification.send()
+```
+
+No more "what if the dict doesn't have the key I expect?" Just types that work.
+
+The magic is in that `discriminator="type"`. Pydantic looks at the type field and automatically creates the right class. No isinstance checks, no manual dispatch. The type system is your router.
+
+### 4. State Machines That Actually State Machine
+
+Your business logic is full of state machines. Order workflows, user lifecycles, payment flows. But I bet they're implemented as string comparisons scattered across service methods, held together by hopes and comments that say "TODO: refactor this."
+
+```python
+class PaymentStatus(StrEnum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    REFUNDED = "refunded"
+    
+    def can_refund(self) -> bool:
+        return self == self.COMPLETED
+    
+    def can_retry(self) -> bool:
+        return self == self.FAILED
+    
+    def next_status(self, event: PaymentEvent) -> "PaymentStatus":
+        transitions = {
+            (self.PENDING, PaymentEvent.PROCESS): self.PROCESSING,
+            (self.PROCESSING, PaymentEvent.SUCCEED): self.COMPLETED,
+            (self.PROCESSING, PaymentEvent.FAIL): self.FAILED,
+            (self.COMPLETED, PaymentEvent.REFUND): self.REFUNDED,
+            (self.FAILED, PaymentEvent.RETRY): self.PENDING,
         }
-        return handlers[self](order, new_status)
+        
+        next_status = transitions.get((self, event))
+        if next_status is None:
+            raise InvalidTransition(
+                f"Cannot {event} from {self}. "
+                f"Valid events: {self._valid_events()}"
+            )
+        return next_status
     
-    def _execute_valid_transition(self, order: "Order", new_status: OrderStatus) -> "Order":
-        return order.model_copy(update={"status": new_status})
-    
-    def _reject_invalid_transition(self, order: "Order", new_status: OrderStatus) -> "Order":
-        raise ValueError(f"Invalid transition to {new_status}")
+    def _valid_events(self) -> set[PaymentEvent]:
+        # Now you can actually ask "what can I do from here?"
+        return {
+            event for (status, event), _ in self._transitions.items() 
+            if status == self
+        }
 ```
 
-The shift is profound. Your models stop being passive data holders and become active participants that encode your business reality. Services shrink to mere orchestrators. Tests simplify because models validate themselves. And most importantly, your domain logic lives in one place—with the data it governs.
+Your enum now encodes your entire payment flow. One source of truth. No more "wait, can a refunded payment be processed again?" debates at sprint planning.
 
-## Core Principles
+## We've All Written This Code
 
-### 1. No Naked Primitives
-
-In physics, units matter. You can't add meters to seconds. Yet in code, we routinely use `float` for money, `string` for email, `int` for age. These "naked primitives" hide critical domain knowledge.
+Let's fix the code we've all written at some point:
 
 ```python
-# ❌ Bad
-price: float
-email: str
-quantity: int
-
-# ✅ Good  
-price: Money  # Knows currency, precision, operations
-email: Email  # Validates format, provides domain operations
-quantity: Quantity  # Ensures positive, knows unit of measure
+# The "architecture" we've all built
+class Product:
+    sku: str
+    name: str
+    price: float
+    discount_percentage: float
+    stock_level: int
+    reserved_stock: int
+    category: str
+    
+class ProductService:
+    def get_available_stock(self, product: Product) -> int:
+        return product.stock_level - product.reserved_stock
+    
+    def calculate_price(self, product: Product) -> float:
+        if product.discount_percentage > 0:
+            return product.price * (1 - product.discount_percentage / 100)
+        return product.price
+    
+    def can_purchase(self, product: Product, quantity: int) -> tuple[bool, str]:
+        if quantity <= 0:
+            return False, "Invalid quantity"
+        
+        available = self.get_available_stock(product)
+        if available < quantity:
+            return False, f"Only {available} items available"
+            
+        if product.category == "limited_edition" and quantity > 2:
+            return False, "Limited edition items have a maximum quantity of 2"
+            
+        return True, "OK"
+    
+    def reserve_stock(self, product: Product, quantity: int) -> Product:
+        # Mutates the product! What could go wrong?
+        product.reserved_stock += quantity
+        return product
 ```
 
-When you create a `Money` type, you're not just adding validation. You're encoding that money has currency, that different currencies can't be mixed, that monetary calculations need specific rounding rules. This knowledge belongs in your type system, not scattered across your codebase.
-
-### 2. Behavior Lives with Data
-
-Object-oriented programming promised encapsulation, but somewhere we forgot. We extract behavior into services, leaving models as property bags. This violates the fundamental principle: data and the operations on that data should live together.
+And here's what it becomes with SDA:
 
 ```python
-class Temperature(BaseModel):
-    celsius: Decimal = Field(ge=-273.15)  # Absolute zero
+class StockLevel(BaseModel):
+    total: Count = Field(ge=0)
+    reserved: Count = Field(ge=0)
     
-    def to_fahrenheit(self) -> Decimal:
-        return self.celsius * Decimal('1.8') + 32
+    @field_validator('reserved')
+    @classmethod
+    def reserved_cannot_exceed_total(cls, v: Count, info: ValidationInfo) -> Count:
+        if total := info.data.get('total'):
+            if v > total:
+                raise ValueError('Reserved cannot exceed total stock')
+        return v
     
     @computed_field
     @property
-    def temperature_state(self) -> TemperatureState:
-        return TemperatureState.from_celsius(self.celsius)
-        
-class TemperatureState(StrEnum):
-    FREEZING = "freezing"
-    ABOVE_FREEZING = "above_freezing"
+    def available(self) -> Count:
+        return Count(self.total - self.reserved)
     
-    @classmethod
-    def from_celsius(cls, celsius: Decimal) -> 'TemperatureState':
-        # Pure boolean dispatch
-        return {
-            True: cls.FREEZING,
-            False: cls.ABOVE_FREEZING
-        }[celsius <= 0]
-```
-
-This model doesn't just store temperature—it understands temperature. It knows about absolute zero, unit conversions, and state transitions. When behavior lives with data, impossible operations become unrepresentable.
-
-### 3. Immutable State Transitions
-
-Mutable state is where bugs breed. When objects change underneath you, reasoning about program behavior becomes exponentially harder. Semantic models embrace immutability:
-
-```python
-def place_order(self) -> "Order":
-    """Return new state instead of mutating."""
-    # Status validation handled by discriminated union dispatch
-    return self.status.place_order(self)
-
-class OrderStatus(StrEnum):
-    DRAFT = "draft"
-    PLACED = "placed"
-    
-    def place_order(self, order: "Order") -> "Order":
-        # Pure method dispatch without lambdas
-        handlers = {
-            OrderStatus.DRAFT: self._place_draft_order,
-            OrderStatus.PLACED: self._reject_placed_order
-        }
-        return handlers[self](order)
-    
-    def _place_draft_order(self, order: "Order") -> "Order":
-        return order.model_copy(update={
-            "status": OrderStatus.PLACED,
-            "placed_at": datetime.now()
+    def reserve(self, quantity: Count) -> "StockLevel":
+        """Immutable reservation - returns new StockLevel"""
+        if quantity > self.available:
+            raise InsufficientStock(requested=quantity, available=self.available)
+        return self.model_copy(update={
+            'reserved': self.reserved + quantity
         })
+
+class ProductCategory(StrEnum):
+    STANDARD = "standard"
+    LIMITED_EDITION = "limited_edition"
+    CLEARANCE = "clearance"
     
-    def _reject_placed_order(self, order: "Order") -> "Order":
-        raise ValueError("Order already placed")
-```
+    @property
+    def max_purchase_quantity(self) -> Count | None:
+        """Some categories have purchase limits"""
+        limits = {
+            self.LIMITED_EDITION: Count(2),
+            self.STANDARD: None,
+            self.CLEARANCE: None
+        }
+        return limits[self]
 
-Each state transition returns a new instance. This isn't just functional programming dogma—it enables time-travel debugging, safe concurrent access, and clear audit trails. Your models become a sequence of immutable states rather than a mutable object with hidden history.
-
-### 4. Smart Enums
-
-Never use string literals for domain concepts. Create StrEnum instead—these constants have relationships, rules, and behavior. Don't hide that knowledge in service classes:
-
-```python
-class OrderStatus(StrEnum):  # ✅ StrEnum, not string literals
-    DRAFT = "draft"
-    PLACED = "placed"
-    SHIPPED = "shipped"
+class Price(BaseModel):
+    amount: Money
+    discount: Percent = Percent(0)
     
-    def get_transition_state(self, new_status: "OrderStatus") -> TransitionState:
-        # Pure enum dispatch with type-safe method lookup
-        return {
-            self.DRAFT: self._check_draft_transition,
-            self.PLACED: self._check_placed_transition,
-            self.SHIPPED: self._check_shipped_transition
-        }[self](new_status)
-    
-    def _check_draft_transition(self, new_status: "OrderStatus") -> TransitionState:
-        valid_statuses = {self.PLACED}
-        return {
-            True: TransitionState.VALID,
-            False: TransitionState.INVALID
-        }[new_status in valid_statuses]
-    
-    def _check_placed_transition(self, new_status: "OrderStatus") -> TransitionState:
-        valid_statuses = {self.SHIPPED}
-        return {
-            True: TransitionState.VALID,
-            False: TransitionState.INVALID
-        }[new_status in valid_statuses]
-    
-    def _check_shipped_transition(self, new_status: "OrderStatus") -> TransitionState:
-        # Shipped is terminal state - no valid transitions
-        return TransitionState.INVALID
-```
+    @computed_field
+    @property
+    def final_amount(self) -> Money:
+        """The actual price after discount"""
+        if self.discount == Percent(0):
+            return self.amount
+        discount_multiplier = (Percent(100) - self.discount) / Percent(100)
+        return self.amount * discount_multiplier
 
-This StrEnum doesn't just list statuses—it encodes your business workflow. The state machine lives where it belongs, making invalid transitions impossible to express. **Never use bare strings like `"draft"` or `"placed"` directly in your code.**
-
-## Real-World Example
-
-Theory is nice, but let's see the transformation in practice. Here's a payment processing system, before and after:
-
-```python
-# ❌ Before: Conditional logic in services
-class PaymentService:
-    def process_payment(self, payment_data: dict) -> dict:
-        # ❌ BANNED: Manual validation with conditionals
-        if payment_data['amount'] <= 0:
-            raise ValueError("Invalid amount")
-        
-        # ❌ BANNED: String literal conditionals
-        if payment_data['method'] == 'credit':
-            fee = payment_data['amount'] * 0.029 + 0.30
-        elif payment_data['method'] == 'ach':
-            fee = 0.25
-        # ... 200 more lines of conditional hell
-
-# After: Logic in models  
-class Payment(BaseModel):
-    # ✅ Field constraints replace manual validation
-    amount: Money = Field(gt=0, description="Positive payment amount")
-    method: PaymentMethod
+class Product(BaseModel):
+    sku: ProductSku
+    name: str
+    price: Price
+    stock: StockLevel
+    category: ProductCategory
     
     model_config = {"frozen": True}
     
-    @computed_field
-    @property
-    def processing_fee(self) -> Money:
-        """Payment knows its own fees."""
-        return self.method.calculate_fee(self.amount)
+    def check_purchase_eligibility(self, quantity: Count) -> PurchaseEligibility:
+        """All purchase rules in one place"""
+        if quantity <= 0:
+            return PurchaseEligibility.invalid_quantity()
+            
+        if quantity > self.stock.available:
+            return PurchaseEligibility.insufficient_stock(
+                requested=quantity,
+                available=self.stock.available
+            )
+            
+        if max_qty := self.category.max_purchase_quantity:
+            if quantity > max_qty:
+                return PurchaseEligibility.exceeds_limit(max_qty)
+                
+        return PurchaseEligibility.eligible()
     
-    def process(self, processor: PaymentProcessor) -> PaymentResult:
-        """Payment knows how to process itself."""
-        return processor.charge(
-            amount=self.amount + self.processing_fee,
-            method=self.method
-        )
+    def reserve_stock(self, quantity: Count) -> "Product":
+        """Returns new Product with updated stock"""
+        return self.model_copy(update={
+            'stock': self.stock.reserve(quantity)
+        })
 ```
 
-Notice what happened. The service's 200 lines of procedural logic became declarative model properties. Fee calculation moved to where it belongs—with the payment method. Validation became a field constraint, impossible to bypass. The model doesn't just hold payment data; it embodies payment processing knowledge.
+What changed? Everything:
+- No more float prices (was it dollars? cents? euros? bitcoin?)
+- Stock logic lives with stock data
+- Categories know their own rules
+- Immutable operations (no more "who changed my product?!" debugging sessions)
+- The model teaches you the business rules
 
-## Advanced Patterns
+## The Cultural Shift
 
-Once you embrace semantic models, powerful patterns emerge that eliminate entire categories of bugs:
+Here's what they don't tell you about adopting SDA: it changes how your team talks about code.
 
-### Discriminated Unions (Domain Intelligence)
+Before SDA, standups sound like this: "I'm adding validation to the OrderService. Jim's working on the OrderValidationHelper. Sarah's refactoring the OrderProcessingManager." We're describing plumbing, not the problem.
 
-Traditional domain polymorphism in Python requires isinstance checks, visitor patterns, or abstract base classes. Discriminated unions offer a cleaner approach for domain logic:
+After SDA: "I'm teaching Orders how to apply bulk discounts. Jim's implementing the subscription renewal state machine. Sarah's modeling the return merchandise workflow."
+
+See the difference? We stop talking about services and start talking about the business. Product managers can actually understand our standups. Hell, they start *attending* them.
+
+The junior developers get productive faster. Why? Because instead of navigating a maze of service classes, they can look at a model and understand the business rules. `PaymentStatus.can_refund()` doesn't require a PhD in Architecture Astronautics to understand.
+
+But the best part? The arguments stop. Not completely (we're still developers), but the religious wars about "where should this logic live?" just... end. There's an obvious answer now: **with the data it operates on. The code itself enforces the architecture.**
+
+One warning though: once your team tastes this, they can't go back. I've watched developers leave companies rather than return to anemic models. It's like asking someone who's discovered type safety to go back to stringly-typed everything. Some knowledge can't be unlearned.
+
+## Dealing with the Messy Outside World
+
+Here's the thing nobody tells you: the outside world doesn't follow SDA. Your database returns dictionaries. APIs send you JSON. Legacy systems speak XML from 2003.
+
+The trick is boundary intelligence - convert external data to domain models at the edges:
 
 ```python
-from typing import Annotated, Discriminator
+# Bad: Letting external structures infect your domain
+def process_api_order(api_data: dict) -> None:
+    if api_data.get("type") == "standard":
+        # Now dict surgery spreads through your codebase
+        process_standard_order(api_data)
+    elif api_data.get("type") == "express":
+        process_express_order(api_data)
 
-class EmailNotification(BaseModel):
-    type: Literal["email"] = "email"  # ✅ Literal OK for discriminator tags
-    to: Email
-    subject: str
-
-class SmsNotification(BaseModel):
-    type: Literal["sms"] = "sms"  # ✅ Literal OK for discriminator tags
-    to: PhoneNumber
-    message: str
-
-Notification = Annotated[Union[EmailNotification, SmsNotification], Discriminator('type')]
-
-# Pydantic handles dispatch - no isinstance needed
-def send(notification: Notification) -> None:
-    notification.send()  # Each type has its own send() method
+# Good: Convert at the boundary
+def process_api_order(api_data: dict) -> None:
+    # One place to handle external messiness
+    order = parse_external_order(api_data)  # Returns proper Order model
+    # Now work with type-safe domain models
+    result = order.process()
+    
+def parse_external_order(data: dict) -> Order:
+    """The DMZ between external chaos and internal sanity."""
+    # This is the ONLY place that knows about external format
+    order_type = data.get("type", "standard")
+    
+    # Convert to domain types immediately
+    return Order(
+        type=OrderType(order_type),
+        items=[parse_line_item(item) for item in data.get("items", [])],
+        customer=parse_customer(data["customer"])
+    )
 ```
 
-The discriminator field tells Pydantic which type to instantiate. No manual type checking, no visitor pattern, no match statements. The type system handles dispatch automatically.
+Keep the mess at the borders. Your core domain stays clean.
 
-**Note**: `Literal` is acceptable for discriminator tags in unions, but use `StrEnum` for actual domain concepts with behavior.
+## Testing (The F1 Car Analogy)
 
-### Cross-Field Validation
-
-Real-world constraints often span multiple fields. Traditional validation scatters these rules across service methods. Pydantic's validation context keeps them with the model:
+Your SDA models are like F1 cars - sophisticated machines with the complexity concentrated in specific areas. You don't test that the engine block is made of metal. You test that it produces the right power at the right RPM.
 
 ```python
-class PriceRange(BaseModel):
-    min_price: Money
-    max_price: Money
-    
-    @model_validator(mode='after')
-    def validate_range(self) -> 'PriceRange':
-        # ✅ Type dispatch instead of conditionals
-        validation_state = ValidationState.from_prices(self.min_price, self.max_price)
-        return validation_state.validate(self)
-        
-class ValidationState(StrEnum):
-    VALID = "valid"
-    INVALID = "invalid"
-    
-    @classmethod
-    def from_prices(cls, min_price: Money, max_price: Money) -> 'ValidationState':
-        # Type dispatch instead of conditional
-        comparison_result = ComparisonResult.from_values(max_price, min_price)
-        return comparison_result.to_validation_state()
+# Don't test Pydantic's validation
+def test_money_validates_positive():
+    # Pydantic already tested this
+    with pytest.raises(ValidationError):
+        Money(amount=-1, currency=Currency.USD)
 
-class ComparisonResult(StrEnum):
-    GREATER_OR_EQUAL = "greater_or_equal"
-    LESS_THAN = "less_than"
+# Test your domain logic
+def test_money_splits_evenly_with_remainder():
+    money = Money(amount=Decimal("10.03"), currency=Currency.USD)
+    splits = money.split_evenly(3)
     
-    @classmethod
-    def from_values(cls, a: Money, b: Money) -> 'ComparisonResult':
-        # Pure boolean dispatch without ternary
-        return {
-            True: cls.GREATER_OR_EQUAL,
-            False: cls.LESS_THAN
-        }[a >= b]
+    # First split gets the remainder penny
+    assert splits[0].amount == Decimal("3.35")
+    assert splits[1].amount == Decimal("3.34")
+    assert splits[2].amount == Decimal("3.34")
     
-    def to_validation_state(self) -> ValidationState:
-        return {
-            ComparisonResult.GREATER_OR_EQUAL: ValidationState.VALID,
-            ComparisonResult.LESS_THAN: ValidationState.INVALID
-        }[self]
-    
-    def validate(self, price_range: 'PriceRange') -> 'PriceRange':
-        # Pure method dispatch without lambdas
-        handlers = {
-            ValidationState.VALID: self._return_valid_range,
-            ValidationState.INVALID: self._reject_invalid_range
-        }
-        return handlers[self](price_range)
-    
-    def _return_valid_range(self, price_range: 'PriceRange') -> 'PriceRange':
-        return price_range
-    
-    def _reject_invalid_range(self, price_range: 'PriceRange') -> 'PriceRange':
-        raise ValueError("Max price must be >= min price")
+    # No money lost in rounding
+    assert sum(s.amount for s in splits) == money.amount
 ```
 
-The validator has access to all fields through `ValidationInfo`. Complex invariants become explicit constraints, impossible to violate regardless of how the model is constructed.
+Test the intelligence, not the plumbing.
 
-## Key SDA Techniques
+## The Mental Shift
 
-### 🚨 DISCRIMINATED UNIONS OR DEATH 🚨
-**ABSOLUTE RULE**: If you see ANY branching logic, the answer is discriminated unions. Not if. Not match. Not isinstance. **DISCRIMINATED UNIONS.**
+The hardest part isn't learning Pydantic. It's unlearning the "anemic model" pattern that's been drilled into us for decades. 
 
-**BANNED CONSTRUCTS (ZERO TOLERANCE):**
-- `if/elif/else` statements → Use discriminated unions with StrEnum
-- `isinstance()` checks → Use discriminated union with type-based dispatch
-- `match/case` statements → Use discriminated union enum handlers
-- `try/except` → Use Result types with discriminated unions
+Stop thinking in layers. Start thinking in concepts. An Order isn't a data structure that needs a service to tell it what to do. An Order is a domain concept that knows how to be an order.
 
-### The Type System Test
-Use discriminated union dispatch patterns:
-- Type intelligence with discriminated unions
-- Model methods with behavioral enums
-- Enum behavior with StrEnum handlers
-- Pydantic Field constraints for validation
+Your services should shrink to almost nothing—just orchestration and infrastructure. If a service method is more than 10 lines, ask yourself: what domain concept is trying to emerge?
 
-### Zero Tolerance Policy  
-The "Big Three" anti-patterns (isinstance(), hasattr()/getattr(), if/elif chains) are **BANNED** for domain logic. Use discriminated unions for ALL domain branching logic.
+## Start Tomorrow
 
-**Exception**: Boundary intelligence patterns allow controlled `isinstance()` in single extraction points when converting external systems to domain models.
+Here's your migration path that actually works:
 
-### 🚨 DISCRIMINATED UNION MANDATORY PRINCIPLE 🚨
-EVERY TIME you think about **domain** branching:
-- **Domain isinstance()** → BANNED. Use discriminated union (Annotated[Union[...], Field(discriminator='type')])
-- **Domain if/elif** → BANNED. Use discriminated union with StrEnum behavioral methods
-- **Domain conditionals** → BANNED. Use discriminated union type dispatch
-- **Domain match/case** → BANNED. Use discriminated union enum handlers
+1. **Pick one painful primitive**. You know the one. That `user_type: str` that's compared against magic strings in 47 places. The one where someone inevitably types "Admin" instead of "admin" and breaks production.
 
-**Boundary isinstance()** → Allowed only in single extraction points that immediately convert to domain models.
+2. **Make it an enum with one method**. Just one. Maybe `is_admin()`. Nothing fancy.
 
-### Boundary Intelligence Patterns
-Handle external systems without compromising domain purity:
-- **Single extraction points** - One place per external system for type dispatch
-- **Immediate domain conversion** - External data becomes domain models quickly  
-- **Pure extraction functions** - Boundary crossing with no side effects
-- **TypeAdapter validation** - Pydantic's tool for boundary safety
+3. **Find every place that string is compared**. Your IDE can help here. Move that logic to the enum.
 
-```python
-# ✅ Controlled isinstance() at boundary extraction point
-def extract_analysis_domain(node: ast.AST) -> AnalysisDomain | None:
-    """Single boundary crossing: AST → Domain meaning."""
-    extractors = {
-        ast.If: ConditionalDomain.from_ast,
-        ast.For: LoopDomain.from_ast
-    }
-    extractor = extractors.get(type(node))  # Controlled external dispatch
-    return extractor(node) if extractor else None  # ✅ Boundary ternary OK - converts to domain
+4. **Watch your code get smaller** and your bugs disappear. 
 
-# ✅ Pure domain logic - no external dependencies
-class ConditionalDomain(BaseModel):
-    test_expression: str
-    
-    @computed_field
-    @property  
-    def violation_type(self) -> ViolationType:
-        # Pure domain logic with discriminated unions
-        return self.complexity_level.get_violation_type()
-```
+5. **Show your team**. This is important. Nothing sells SDA like deleting 50 lines of defensive programming.
 
-### Service Architecture Patterns
-Services eliminate conditionals through type system design:
-- Module-level service instances for global services
-- Module-level factory functions for parameterized services
-- Service state as discriminated union types
-- Pure dictionary lookup for service access
+6. **Repeat** until your models actually model your domain.
 
-### Testing Philosophy: The F1 Car
-SDA has sophisticated simplicity. Like an F1 car, complexity is encoded in types - necessary, elegant, and concentrated in discriminated unions. Test the type intelligence where it lives—in discriminated union dispatch logic, enum behavior, and model decisions. Trust Pydantic for serialization, validation plumbing, and state management.
+The beauty is you can do this incrementally. You don't need permission to make a value object. You don't need a migration plan to add a method to a model. Just start.
 
-## Getting Started
+## When to Use This (And When Not To)
 
-The hardest part isn't learning these patterns—it's unlearning the service-oriented habits. Start small:
+**SDA shines when:**
+- Your domain has actual business rules (not just CRUD)
+- The same logic appears in multiple places
+- You're debugging "state" bugs constantly
+- New developers ask "but what are the rules?"
+- Your tests are more mock than test
 
-1. Pick your most complex service
-2. Find the anemic model it operates on
-3. Move one method from service to model
-4. Run your tests - they should still pass
-5. Repeat until the service just orchestrates
+**SDA is overkill when:**
+- You're literally just storing and retrieving data
+- The "domain" is just "save this form to the database"
+- You're prototyping and everything changes hourly
+- The complexity is in the infrastructure, not the domain
 
-Each migration reveals how much of your "business logic" was actually just data access and transformation. The rules guide this process, helping both you and AI assistants generate models that encode reality rather than just structure data.
+Don't use a Formula 1 car to go to the grocery store. But also don't use a grocery getter on a race track.
 
-The end state? Your models become executable specifications. Reading them teaches your domain. Testing them verifies your business rules. And your services become so simple they barely need tests.
+## The Part Where I Get Real
 
-## Resources
+Bad code isn't usually written by bad developers. It's written by good developers working in bad systems. Systems that force you to scatter logic across seventeen files. Systems that make you write unit tests that are 90% mocks. Systems that turn simple business rules into distributed computing problems.
 
-- [Pydantic Documentation](https://docs.pydantic.dev/) - The foundation
-- [Cursor Documentation](https://cursor.com/docs) - How rules work
+SDA isn't about being clever. It's about being honest. Honest about what your code actually does. Honest about where complexity lives. Honest about the fact that `validate_order_status_transition_rules_for_premium_customers()` probably belongs on the Order model, not in a utility class.
+
+When you adopt SDA, you're not just changing your code. You're changing how you think about code. You're admitting that maybe, just maybe, the objects in "object-oriented programming" should actually... orient around objects.
+
+## Tools
+
+- **[Pydantic V2](https://docs.pydantic.dev/)**: Non-negotiable. If you're on V1, migrate. The performance alone is worth it.
+- **[Cursor](https://cursor.com/)**: These rules teach it to write SDA-style code. Like pair programming with someone who's read all the docs.
+- **[mypy](http://mypy-lang.org/)**: `--strict` mode or go home. Type systems only help if you use them.
+- **[Hypothesis](https://hypothesis.readthedocs.io/)**: Property testing + smart models = bugs found before QA does.
+
+## Contributing
+
+Found a pattern that makes models smarter? PR it. Got war stories about migrating from anemic models? Share them. This is a living architecture that gets better when people who've been in the trenches contribute.
+
+---
+
+*Your models should be so good that your business analysts steal them for documentation. If you have to explain what your model does, it's not doing enough.*
