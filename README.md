@@ -27,7 +27,7 @@ cp -r sda-rules-mdc-main/.cursor .
 
 ## What You Get
 
-Nine modular rules that work together:
+Ten modular rules that work together:
 
 ### [`000-sda-core.mdc`](.cursor/rules/000-sda-core.mdc) *(Always Applied)*
 Core architectural principles - data drives behavior, models contain business logic. The foundation that always loads.
@@ -58,6 +58,9 @@ Pydantic's powerful tools that enable SDA patterns. Discriminated union mandator
 
 ### [`080-service-architecture.mdc`](.cursor/rules/080-service-architecture.mdc) *(Context-Aware)*
 Service architecture patterns for eliminating conditionals in service design and external module interfaces.
+
+### [`090-boundary-intelligence.mdc`](.cursor/rules/090-boundary-intelligence.mdc) *(Context-Aware)*
+Patterns for handling external system boundaries without compromising domain purity. Extract intelligence from external systems rather than fighting them.
 
 ## Token-Efficient Design
 
@@ -230,7 +233,7 @@ class OrderStatus(StrEnum):  # ✅ StrEnum, not string literals
     SHIPPED = "shipped"
     
     def get_transition_state(self, new_status: "OrderStatus") -> TransitionState:
-        # Pure enum dispatch instead of dict.get() conditional
+        # Pure enum dispatch with type-safe method lookup
         return {
             self.DRAFT: self._check_draft_transition,
             self.PLACED: self._check_placed_transition,
@@ -305,9 +308,9 @@ Notice what happened. The service's 200 lines of procedural logic became declara
 
 Once you embrace semantic models, powerful patterns emerge that eliminate entire categories of bugs:
 
-### Discriminated Unions (No More isinstance)
+### Discriminated Unions (Domain Intelligence)
 
-Traditional polymorphism in Python requires isinstance checks, visitor patterns, or abstract base classes. Discriminated unions offer a cleaner approach:
+Traditional domain polymorphism in Python requires isinstance checks, visitor patterns, or abstract base classes. Discriminated unions offer a cleaner approach for domain logic:
 
 ```python
 from typing import Annotated, Discriminator
@@ -411,15 +414,48 @@ Use discriminated union dispatch patterns:
 - Enum behavior with StrEnum handlers
 - Pydantic Field constraints for validation
 
-### Zero Tolerance Policy
-The "Big Three" anti-patterns (isinstance(), hasattr()/getattr(), if/elif chains) are **BANNED**. No exceptions. Use discriminated unions for ALL branching logic.
+### Zero Tolerance Policy  
+The "Big Three" anti-patterns (isinstance(), hasattr()/getattr(), if/elif chains) are **BANNED** for domain logic. Use discriminated unions for ALL domain branching logic.
+
+**Exception**: Boundary intelligence patterns allow controlled `isinstance()` in single extraction points when converting external systems to domain models.
 
 ### 🚨 DISCRIMINATED UNION MANDATORY PRINCIPLE 🚨
-EVERY TIME you think about branching:
-- **ANY isinstance()** → BANNED. Use discriminated union (Annotated[Union[...], Field(discriminator='type')])
-- **ANY if/elif** → BANNED. Use discriminated union with StrEnum behavioral methods
-- **ANY conditional** → BANNED. Use discriminated union type dispatch
-- **ANY match/case** → BANNED. Use discriminated union enum handlers
+EVERY TIME you think about **domain** branching:
+- **Domain isinstance()** → BANNED. Use discriminated union (Annotated[Union[...], Field(discriminator='type')])
+- **Domain if/elif** → BANNED. Use discriminated union with StrEnum behavioral methods
+- **Domain conditionals** → BANNED. Use discriminated union type dispatch
+- **Domain match/case** → BANNED. Use discriminated union enum handlers
+
+**Boundary isinstance()** → Allowed only in single extraction points that immediately convert to domain models.
+
+### Boundary Intelligence Patterns
+Handle external systems without compromising domain purity:
+- **Single extraction points** - One place per external system for type dispatch
+- **Immediate domain conversion** - External data becomes domain models quickly  
+- **Pure extraction functions** - Boundary crossing with no side effects
+- **TypeAdapter validation** - Pydantic's tool for boundary safety
+
+```python
+# ✅ Controlled isinstance() at boundary extraction point
+def extract_analysis_domain(node: ast.AST) -> AnalysisDomain | None:
+    """Single boundary crossing: AST → Domain meaning."""
+    extractors = {
+        ast.If: ConditionalDomain.from_ast,
+        ast.For: LoopDomain.from_ast
+    }
+    extractor = extractors.get(type(node))  # Controlled external dispatch
+    return extractor(node) if extractor else None  # ✅ Boundary ternary OK - converts to domain
+
+# ✅ Pure domain logic - no external dependencies
+class ConditionalDomain(BaseModel):
+    test_expression: str
+    
+    @computed_field
+    @property  
+    def violation_type(self) -> ViolationType:
+        # Pure domain logic with discriminated unions
+        return self.complexity_level.get_violation_type()
+```
 
 ### Service Architecture Patterns
 Services eliminate conditionals through type system design:
