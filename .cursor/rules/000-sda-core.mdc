@@ -16,16 +16,16 @@ Data drives behavior. Business logic lives with the data it operates on.
 
 ## Separation of Concerns
 **Models decide, Services orchestrate:**
-- Models: "Can this order be shipped?" (business logic)
-- Services: "Ship this order via FedEx API" (infrastructure)
+- Models: Discriminated union business logic methods
+- Services: Infrastructure orchestration only
 - Never: Services making business decisions about models
 
-## Decision Framework
-- Primitive with domain meaning? → Value Object (BaseModel)
-- Finite choices with behavior? → StrEnum with methods (never string literals)
-- Derived from other fields? → @computed_field
-- External dependency? → Protocol
-- Infrastructure coordination? → Service
+## Type Dispatch Framework
+- Primitive with domain meaning → Value Object (BaseModel)
+- Finite choices with behavior → StrEnum with methods (never string literals)  
+- Derived from other fields → @computed_field
+- External dependency → Protocol
+- Infrastructure coordination → Service
 
 ## Immutability
 - All models frozen by default: `model_config = {"frozen": True}`

@@ -24,17 +24,17 @@ Use `@computed_field` ONLY when:
 - Display constants (widths, limits, separators)
 
 ## The Computed Field Test
-Ask: "If I change other fields, does this value change?"
-- Yes → `@computed_field`
-- No → Regular field
+Use discriminated union to determine field type:
+- Depends on other fields → `@computed_field`
+- Static value → Regular field
 
 ## Field Constraints
 - Use `Field(ge=0, le=100)` for validation
 - Use `Field(min_length=1, max_length=200)` for strings
 - Use `default_factory` for mutable defaults
-- Type collections properly: `list[T]`, `dict[K, V]`
+- Type collections with domain models: `list[OrderItem]`, not generic `dict`
 
 ## Optional Fields
 - Use `Optional` only when `None` has business meaning
-- Consider discriminated unions for state-dependent fields
-- Document what `None` means in the business context
+- USE discriminated unions for state-dependent fields
+- Encode `None` semantics in discriminated union types

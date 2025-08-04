@@ -1,0 +1,29 @@
+---
+description: Service architecture patterns for SDA
+globs: ["**/*.py"]
+alwaysApply: false
+---
+
+# Service Architecture Patterns
+
+## Core Principle
+Services eliminate conditionals through type system design and initialization patterns.
+
+## Banned Service Patterns
+- **Lazy initialization** - Services checking "if not cached"
+- **Runtime service creation** - Create services at configuration time
+- **Conditional service access** - Use discriminated unions for service state
+- **Factory conditionals** - Push creation logic to type system
+
+## Required Service Patterns
+- **Pre-initialization** - All services created at configuration time
+- **Type system defaults** - Use `default_factory` and `defaultdict`
+- **Service state as discriminated unions** - Model service lifecycle as types
+- **Configuration models** - Service needs declared as domain models
+
+## Service Design Rules
+- Module-level service instances for global services
+- Module-level factory functions for parameterized services  
+- Service state as discriminated union types
+- External protocols hide implementation details
+- Pure dictionary lookup for service access

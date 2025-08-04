@@ -1,0 +1,85 @@
+---
+description: DISCRIMINATED UNIONS ARE MANDATORY FOR ALL BRANCHING LOGIC
+globs: ["**/*.py"]
+alwaysApply: true
+---
+
+# 🚨 DISCRIMINATED UNIONS OR DEATH 🚨
+
+## ABSOLUTE RULE
+IF YOU SEE ANY BRANCHING LOGIC, THE ANSWER IS DISCRIMINATED UNIONS.
+NOT IF. NOT MATCH. NOT ISINSTANCE. DISCRIMINATED UNIONS.
+
+## BANNED CONSTRUCTS (ZERO TOLERANCE)
+```python
+# 🚨 BANNED - REWRITE IMMEDIATELY
+if isinstance(obj, SomeType):
+    do_something()
+
+if condition:
+    return value_a
+else:
+    return value_b
+
+match obj:
+    case TypeA(): handle_a()
+    case TypeB(): handle_b()
+
+try:
+    risky_operation()
+except SomeError:
+    handle_error()
+```
+
+## MANDATORY PATTERNS
+```python
+# ✅ DISCRIMINATED UNION - ALWAYS USE THIS
+class ItemType(StrEnum):
+    TYPE_A = "type_a"
+    TYPE_B = "type_b"
+    
+    def process(self, data: ProcessData) -> ProcessResult:
+        processors = {
+            ItemType.TYPE_A: handle_type_a,
+            ItemType.TYPE_B: handle_type_b
+        }
+        return processors[self](data)
+
+# ✅ PYDANTIC DISCRIMINATED UNION
+class TypeAItem(BaseModel):
+    type: Literal["type_a"]
+    value_a: str
+
+class TypeBItem(BaseModel):
+    type: Literal["type_b"] 
+    value_b: int
+
+ItemUnion = Annotated[Union[TypeAItem, TypeBItem], Field(discriminator="type")]
+
+# ✅ DISCRIMINATED UNION INSTEAD OF BOOLEAN COERCION
+class ValueState(StrEnum):
+    PRESENT = "present"
+    ABSENT = "absent"
+    
+    def resolve(self, value: DataValue, default: DataValue) -> DataValue:
+        # Pure value dispatch without lambdas
+        return {
+            ValueState.PRESENT: value,
+            ValueState.ABSENT: default
+        }[self]
+
+# ✅ RESULT TYPE INSTEAD OF TRY/EXCEPT
+class Result(StrEnum):
+    SUCCESS = "success"
+    ERROR = "error"
+    
+    def handle(self, data: ResultData) -> ResultOutput:
+        handlers = {
+            Result.SUCCESS: process_success,
+            Result.ERROR: process_error
+        }
+        return handlers[self](data)
+```
+
+## NO EXCEPTIONS
+DISCRIMINATED UNIONS FOR EVERYTHING. NO EXCUSES.

@@ -27,16 +27,19 @@ cp -r sda-rules-mdc-main/.cursor .
 
 ## What You Get
 
-Eight modular rules that work together:
+Nine modular rules that work together:
 
 ### [`000-sda-core.mdc`](.cursor/rules/000-sda-core.mdc) *(Always Applied)*
 Core architectural principles - data drives behavior, models contain business logic. The foundation that always loads.
 
+### [`005-discriminated-unions-nuclear.mdc`](.cursor/rules/005-discriminated-unions-nuclear.mdc) *(Always Applied)*
+🚨 **DISCRIMINATED UNIONS OR DEATH** 🚨 - The nuclear approach to eliminating ALL conditionals. Zero tolerance for if/elif/isinstance/match/try-except. Discriminated unions for everything.
+
 ### [`010-anti-patterns.mdc`](.cursor/rules/010-anti-patterns.mdc) *(Context-Aware)*
-The "Big Three" violations to eliminate: isinstance(), hasattr()/getattr(), and if/elif chains. Only loads when working with these patterns.
+The "Big Three" violations to eliminate: isinstance(), hasattr()/getattr(), and if/elif chains. Zero tolerance policy.
 
 ### [`020-conditional-elimination.mdc`](.cursor/rules/020-conditional-elimination.mdc) *(Context-Aware)*
-Strategies for transforming conditionals into type intelligence. Includes the "Transformation Test" framework.
+Strategies for transforming conditionals into type intelligence. Type system test framework.
 
 ### [`030-field-patterns.mdc`](.cursor/rules/030-field-patterns.mdc) *(Context-Aware)*
 Critical distinctions for Pydantic field usage: when to use @computed_field vs regular fields, constraints, and validation patterns.
@@ -51,7 +54,10 @@ Python-specific SDA requirements: type safety, modern syntax, package management
 Concrete before/after transformation examples showing how to convert traditional patterns to SDA patterns.
 
 ### [`070-pydantic-power-tools.mdc`](.cursor/rules/070-pydantic-power-tools.mdc) *(Context-Aware)*
-Pydantic's powerful tools that enable SDA patterns. Defaults to use discriminated unions, model validators, and domain intelligence instead of isinstance() checks and external validation.
+Pydantic's powerful tools that enable SDA patterns. Discriminated union mandatory principle.
+
+### [`080-service-architecture.mdc`](.cursor/rules/080-service-architecture.mdc) *(Context-Aware)*
+Service architecture patterns for eliminating conditionals in service design and external module interfaces.
 
 ## Token-Efficient Design
 
@@ -291,31 +297,41 @@ The validator has access to all fields through `ValidationInfo`. Complex invaria
 
 ## Key SDA Techniques
 
-### The Transformation Test
-Before writing any `if` statement, ask these questions:
-- Can this be type intelligence?
-- Can this be a model method?
-- Can this be enum behavior?
-- Can this be eliminated through better typing?
+### 🚨 DISCRIMINATED UNIONS OR DEATH 🚨
+**ABSOLUTE RULE**: If you see ANY branching logic, the answer is discriminated unions. Not if. Not match. Not isinstance. **DISCRIMINATED UNIONS.**
 
-This systematic approach transforms procedural code into declarative domain models.
+**BANNED CONSTRUCTS (ZERO TOLERANCE):**
+- `if/elif/else` statements → Use discriminated unions with StrEnum
+- `isinstance()` checks → Use discriminated union with literal discriminator  
+- `match/case` statements → Use discriminated union enum handlers
+- `try/except` → Use Result types with discriminated unions
 
-### System Boundary Principle
-The "Big Three" anti-patterns (isinstance(), hasattr()/getattr(), if/elif chains) are acceptable **ONLY** at true system boundaries:
-- Interfacing with external systems you don't control
-- Processing unknown data structures from APIs  
-- Working with framework/library objects
-- **NOT** for your own domain objects
+### The Type System Test
+Use discriminated union dispatch patterns:
+- Type intelligence with discriminated unions
+- Model methods with behavioral enums
+- Enum behavior with StrEnum handlers
+- Pydantic Field constraints for validation
 
-### Pydantic Power Tools
-Replace manual patterns with Pydantic intelligence:
-- **isinstance() checks** → Discriminated unions with `Field(discriminator='type')`
-- **Manual validation** → `@field_validator` and `@model_validator`
-- **External analyzers** → `@computed_field` domain intelligence
-- **Procedural transforms** → `model_validate()` and `model_dump()`
+### Zero Tolerance Policy
+The "Big Three" anti-patterns (isinstance(), hasattr()/getattr(), if/elif chains) are **BANNED**. No exceptions. Use discriminated unions for ALL branching logic.
+
+### 🚨 DISCRIMINATED UNION MANDATORY PRINCIPLE 🚨
+EVERY TIME you think about branching:
+- **ANY isinstance()** → BANNED. Use discriminated union (Annotated[Union[...], Field(discriminator='type')])
+- **ANY if/elif** → BANNED. Use discriminated union with StrEnum behavioral methods
+- **ANY conditional** → BANNED. Use discriminated union type dispatch
+- **ANY match/case** → BANNED. Use discriminated union enum handlers
+
+### Service Architecture Patterns
+Services eliminate conditionals through type system design:
+- Module-level service instances for global services
+- Module-level factory functions for parameterized services
+- Service state as discriminated union types
+- Pure dictionary lookup for service access
 
 ### Testing Philosophy: The F1 Car
-SDA has sophisticated simplicity. Like an F1 car, complexity exists but it's necessary, elegant, and concentrated. Test the domain intelligence where it lives—in computed fields, enum behavior, and model decisions. Trust Pydantic for serialization, validation plumbing, and state management.
+SDA has sophisticated simplicity. Like an F1 car, complexity is encoded in types - necessary, elegant, and concentrated in discriminated unions. Test the type intelligence where it lives—in discriminated union dispatch logic, enum behavior, and model decisions. Trust Pydantic for serialization, validation plumbing, and state management.
 
 ## Getting Started
 
