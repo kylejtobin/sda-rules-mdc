@@ -10,7 +10,7 @@ alwaysApply: false
 Don't fight external systems—extract domain intelligence from them.
 
 ## Boundary Recognition
-- **External systems**: AST nodes, HTTP requests, database rows, file formats
+- **External systems**: Parse trees, API responses, database rows, configuration files
 - **Domain models**: Your semantic understanding of external data
 - **Extraction layer**: Pure functions that cross boundaries once
 - **TypeAdapter**: Pydantic's tool for boundary validation

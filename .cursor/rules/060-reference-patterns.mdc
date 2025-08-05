@@ -9,16 +9,17 @@ alwaysApply: false
 ## Conditional → Type Dispatch
 ```python
 # ❌ Before: Procedural conditional chains
-violation_processor = get_violation_processor(violation_type)
+result_handler = get_result_handler(result_type)
 
 # ✅ After: Type dispatch with enum behavior
-class ViolationType(StrEnum):
-    isinstance_violations = "isinstance_violations"
-    hasattr_violations = "hasattr_violations"
+class ValidationResult(StrEnum):
+    TYPE_MISMATCH = "type_mismatch"
+    MISSING_FIELD = "missing_field"
+    INVALID_VALUE = "invalid_value"
 
-    def create_finding(self, node: CodeNode) -> Finding:
-        # Enum knows how to create its own findings
-        return Finding(type=self, node=node)
+    def create_report(self, context: ValidationContext) -> Report:
+        # Enum knows how to create its own reports
+        return Report(type=self, context=context)
 ```
 
 ## Runtime Checking → Discriminated Unions
@@ -83,80 +84,81 @@ class ProcessingState(StrEnum):
 ## External System → Domain Intelligence
 ```python
 # ❌ Before: Fighting external polymorphism with conditionals
-if isinstance(node, ast.If):
-    return ConditionalViolation(node)
-elif isinstance(node, ast.For):
-    return LoopViolation(node)
-# Nested conditionals throughout analysis
+if external_event.get("type") == "user_action":
+    return UserActionEvent(external_event)
+elif external_event.get("type") == "system_alert":
+    return SystemAlertEvent(external_event)
+# Nested conditionals throughout processing
 
 # ✅ After: Single boundary extraction + pure domain logic
-def extract_analysis_domain(node: ast.AST) -> AnalysisDomain | None:
-    """Pure boundary crossing: AST → Domain meaning."""
-    metadata = extract_ast_metadata(node)
+def extract_domain_event(external_data: dict) -> DomainEvent | None:
+    """Pure boundary crossing: External → Domain meaning."""
+    event_type = external_data.get("type")
+    metadata = extract_event_metadata(external_data)
     
     # Single place for external type dispatch
     extractors = {
-        ast.If: lambda n: ConditionalDomain.from_ast(n, metadata),
-        ast.For: lambda n: LoopDomain.from_ast(n, metadata),
-        ast.FunctionDef: lambda n: FunctionDomain.from_ast(n, metadata)
+        "user_action": lambda d: UserAction.from_external(d, metadata),
+        "system_alert": lambda d: SystemAlert.from_external(d, metadata),
+        "scheduled_task": lambda d: ScheduledTask.from_external(d, metadata)
     }
     
-    extractor = extractors.get(type(node))
-    return extractor(node) if extractor else None
+    extractor = extractors.get(event_type)
+    return extractor(external_data) if extractor else None
 
-class ConditionalDomain(BaseModel):
-    """Domain intelligence extracted from external AST."""
-    test_expression: str
-    metadata: ASTNodeMetadata
+class UserAction(BaseModel):
+    """Domain intelligence extracted from external event."""
+    action_type: ActionType
+    metadata: EventMetadata
     
     @classmethod
-    def from_ast(cls, node: ast.If, metadata: ASTNodeMetadata) -> 'ConditionalDomain':
+    def from_external(cls, data: dict, metadata: EventMetadata) -> 'UserAction':
         # Boundary method: Extract semantics once
         return cls(
-            test_expression=extract_test_semantics(node.test),
+            action_type=ActionType(data.get("action", "unknown")),
             metadata=metadata
         )
     
     @computed_field
     @property
-    def violation_type(self) -> ViolationType:
+    def requires_audit(self) -> bool:
         # Pure domain logic with no external dependencies
-        return self.metadata.category.get_violation_type()
+        return self.action_type.is_sensitive()
 ```
 
 ## Boundary Services → Pure Functions
 ```python
 # ❌ Before: Service classes with stateful boundary handling
-class ASTAnalyzer:
+class DocumentProcessor:
     def __init__(self):
-        self.violations = []  # Stateful accumulation
+        self.results = []  # Stateful accumulation
     
-    def analyze_file(self, path):
+    def process_file(self, path):
         # Mixed boundary + domain logic
-        tree = ast.parse(path.read_text())
-        self._visit_node(tree)  # Stateful recursion
-        return self.violations
+        raw_content = path.read_text()
+        self._parse_sections(raw_content)  # Stateful recursion
+        return self.results
 
 # ✅ After: Pure functional boundary crossing
-def analyze_ast_file(file_path: Path) -> list[Finding]:
-    """Pure function: File → Domain findings."""
-    tree = ast.parse(file_path.read_text())  # Boundary operation
-    return analyze_ast_tree(tree)  # Pure domain logic
+def process_document_file(file_path: Path) -> list[ProcessedSection]:
+    """Pure function: File → Domain results."""
+    raw_content = file_path.read_text()  # Boundary operation
+    return process_document_content(raw_content)  # Pure domain logic
 
-def analyze_ast_tree(tree: ast.AST) -> list[Finding]:
-    """Pure function: External structure → Domain findings."""
-    domains = extract_all_domains(tree)
-    return [domain.analyze() for domain in domains if domain]
+def process_document_content(content: str) -> list[ProcessedSection]:
+    """Pure function: External content → Domain sections."""
+    sections = extract_all_sections(content)
+    return [section.process() for section in sections if section]
 
-class DomainExtractor:
-    """Functional visitor that produces domain models."""
+class SectionExtractor:
+    """Functional extractor that produces domain models."""
     
-    def visit(self, node: ast.AST) -> list[AnalysisDomain]:
-        current = extract_analysis_domain(node)  # Boundary crossing
+    def extract(self, raw_section: dict) -> list[DomainSection]:
+        current = extract_domain_section(raw_section)  # Boundary crossing
         children = [
-            child_domain 
-            for child in ast.iter_child_nodes(node)
-            for child_domain in self.visit(child)
+            child_section 
+            for child in raw_section.get("subsections", [])
+            for child_section in self.extract(child)
         ]
         return ([current] if current else []) + children
 ```
@@ -176,7 +178,7 @@ from pydantic import TypeAdapter
 
 # Boundary validation adapters
 HTTP_REQUEST_ADAPTER = TypeAdapter(HttpRequestData)
-AST_NODE_ADAPTER = TypeAdapter(ast.AST)
+EXTERNAL_EVENT_ADAPTER = TypeAdapter(ExternalEventData)
 
 def process_request(raw_data: dict) -> ProcessResult:
     """Safe boundary crossing with validation."""
@@ -184,27 +186,77 @@ def process_request(raw_data: dict) -> ProcessResult:
     domain_command = extract_command_from_request(validated_request)
     return domain_command.execute()
 
-class ASTBoundaryExtractor:
-    """Explicit boundary handler between AST and domain."""
+class ExternalDataExtractor:
+    """Explicit boundary handler using discriminated unions."""
     
     @staticmethod
-    def safe_extract(node: ast.AST, attr: str, default: Any = None) -> Any:
-        """Boundary method: Safe attribute extraction."""
-        return getattr(node, attr, default)
-    
-    @staticmethod
-    def extract_identifier(node: ast.AST) -> str:
-        """Boundary method: Extract semantic name from various node types."""
-        # Single place for AST polymorphism
-        extractors = {
-            ast.Name: lambda n: n.id,
-            ast.Attribute: lambda n: n.attr,
-            ast.FunctionDef: lambda n: n.name
+    def extract_entity_type(external_obj: dict) -> EntityType:
+        """Convert external type to domain enum."""
+        type_value = external_obj.get("entity_type", "")
+        type_mapping = {
+            "customer": EntityType.CUSTOMER,
+            "product": EntityType.PRODUCT,
+            "order": EntityType.ORDER,
+            "invoice": EntityType.INVOICE,
+            "payment": EntityType.PAYMENT
         }
-        extractor = extractors.get(type(node), lambda n: "unknown")
+        return type_mapping.get(type_value, EntityType.UNKNOWN)
+    
+    @staticmethod
+    def extract_identifier(external_obj: dict) -> str:
+        """Extract semantic identifier using type dispatch."""
+        entity_type = external_obj.get("entity_type", "")
+        # Direct field access in extractors, no dynamic lookups
+        extractors = {
+            "customer": lambda obj: obj.get("customer_id", ""),
+            "product": lambda obj: obj.get("sku", ""),
+            "order": lambda obj: obj.get("order_number", "")
+        }
+        extractor = extractors.get(entity_type)
+        return extractor(external_obj) if extractor else "unknown"
+```
+
+## Constructive Transformation at Boundaries
+```python
+# ❌ Before: Weakening types to satisfy type checker
+class ItemProcessor:
+    def process(self, item: object) -> ProcessResult:
+        # Weakened type requires runtime checks
+        if not isinstance(item, SpecificItem):
+            raise TypeError("Expected SpecificItem")
+        return self._process_specific(item)
+
+# ✅ After: Strong typing with constructive transformation
+class ItemProcessor:
+    def process(self, item: SpecificItem) -> ProcessResult:
+        # Strong type, no runtime checks needed
+        domain_item = DomainItem.from_specific(item)
+        return domain_item.process()
+
+# ✅ After: When dealing with external polymorphism
+def extract_domain_meaning(external_obj: ExternalType) -> DomainModel:
+    """Single boundary crossing with constructive transformation."""
+    # Step 1: Extract type discriminator
+    obj_type = extract_type_indicator(external_obj)
+    
+    # Step 2: Type-specific extraction with unpacking
+    if obj_type == ObjectType.TYPE_A:
+        # Unpack specific fields
+        field_1 = external_obj.specific_field_1
+        field_2 = external_obj.specific_field_2
         
-        try:
-            return str(extractor(node))
-        except Exception:
-            return "unknown"
+        # Construct domain model
+        return TypeADomain(
+            value_1=DomainValue.from_raw(field_1),
+            value_2=DomainValue.from_raw(field_2)
+        )
+    elif obj_type == ObjectType.TYPE_B:
+        # Different unpacking for different type
+        data_field = external_obj.data_field
+        config_field = external_obj.config_field
+        
+        return TypeBDomain(
+            data=DomainData.from_raw(data_field),
+            config=DomainConfig.from_raw(config_field)
+        )
 ```
