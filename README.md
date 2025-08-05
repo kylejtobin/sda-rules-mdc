@@ -21,8 +21,6 @@ Picture this: It's 2am. Production is on fire. You're tracing through a bug that
 
 The bug? Someone passed a price as a string instead of a float. But really, the bug was that your Order model doesn't know what an order is. It's just a property bag, a glorified dictionary with type hints. The actual intelligence—what makes an order an *order*—lives everywhere except where it should.
 
-But here's the real tragedy: **you could have caught this at the boundary**. One line of constructive type transformation—`Price.from_string(raw_price)`—would have failed fast and loud. Instead, that string slithered through your system like a poison, because somewhere, someone wrote `cast(float, price)` and called it type safety.
-
 We've been writing code backwards. We put data in models and logic in services because someone told us about "separation of concerns" in 2003 and we never questioned it. But here's the thing: **the biggest concern is that your domain logic has no home**.
 
 Remember when "enterprise architecture" meant adding seventeen layers of abstraction to hide a database query? When every simple operation required a Factory that created a Manager that used a Service that called a Repository that wrapped a DAO? We traded simplicity for ceremony and called it "best practices."
@@ -31,21 +29,19 @@ Well, I'm done pretending that's sane.
 
 ## What You Get
 
-Ten modular rules that teach Cursor (and you) how to write models that model:
+Eight focused rules that teach Cursor (and you) how to write models that model:
 
 ### Core Rules (Always Active)
-- **[`000-sda-core.mdc`](.cursor/rules/000-sda-core.mdc)** - The philosophy. Models contain business logic. Constructive types over assertions. Services orchestrate.
-- **[`005-discriminated-unions-nuclear.mdc`](.cursor/rules/005-discriminated-unions-nuclear.mdc)** - The pattern that kills conditionals. No more if/elif chains.
+- **[`000-sda-core.mdc`](.cursor/rules/000-sda-core.mdc)** - The philosophy. Constructive types over assertions. Models contain business logic.
+- **[`001-anti-patterns.mdc`](.cursor/rules/001-anti-patterns.mdc)** - What NOT to do. Zero tolerance for isinstance(), hasattr(), if/elif chains.
+- **[`010-type-dispatch.mdc`](.cursor/rules/010-type-dispatch.mdc)** - Discriminated unions kill all conditionals. The pattern that changes everything.
 
-### Context-Aware Rules (Load When Needed)
-- **[`010-anti-patterns.mdc`](.cursor/rules/010-anti-patterns.mdc)** - The unholy trinity: isinstance(), hasattr(), and if/elif chains
-- **[`020-conditional-elimination.mdc`](.cursor/rules/020-conditional-elimination.mdc)** - Turn branching logic into type dispatch
-- **[`030-field-patterns.mdc`](.cursor/rules/030-field-patterns.mdc)** - When to use @computed_field vs regular fields
-- **[`040-python-standards.mdc`](.cursor/rules/040-python-standards.mdc)** - Type safety and modern Python patterns
-- **[`050-testing-philosophy.mdc`](.cursor/rules/050-testing-philosophy.mdc)** - Test behavior, not plumbing
-- **[`060-reference-patterns.mdc`](.cursor/rules/060-reference-patterns.mdc)** - Before/after examples that actually teach
-- **[`070-pydantic-power-tools.mdc`](.cursor/rules/070-pydantic-power-tools.mdc)** - Advanced Pydantic that enables it all
-- **[`090-boundary-intelligence.mdc`](.cursor/rules/090-boundary-intelligence.mdc)** - Dealing with the messy outside world
+### Implementation Rules (Context-Aware)
+- **[`020-domain-modeling.mdc`](.cursor/rules/020-domain-modeling.mdc)** - Rich types with Pydantic. When to use @computed_field. State machines in models.
+- **[`030-boundaries.mdc`](.cursor/rules/030-boundaries.mdc)** - Dealing with the messy outside world. Pure extraction functions. TypeAdapter patterns.
+- **[`040-services.mdc`](.cursor/rules/040-services.mdc)** - Services orchestrate, models decide. Stateless patterns. Dependency injection.
+- **[`050-python-standards.mdc`](.cursor/rules/050-python-standards.mdc)** - Type safety with zero tolerance. Modern Python 3.13+. Package management with uv.
+- **[`060-testing.mdc`](.cursor/rules/060-testing.mdc)** - Test domain intelligence, not plumbing. Real models over mocks.
 
 ### Why This Structure?
 
@@ -59,74 +55,31 @@ It's the difference between a focused assistant and one that's read too much and
 
 ## The Core Philosophy: Software by Subtraction
 
-Here's what twenty years of "enterprise architecture" taught me: we've been adding when we should've been removing. 
-
-SDA isn't some radical new idea. It's what's left when you strip away two decades of architectural cargo cult. It's built on three fundamental truths that were obvious in 1970 and somehow controversial in 2024:
-
-### 1. Semantic Encoding: Code Should Mean What It Says
-
-**The principle**: The gap between what code says and what it means is where bugs live.
-
-When you write `user.role_id == 1`, you've created a riddle. When you write `user.role.can_admin()`, you've written documentation. One requires tribal knowledge. The other teaches the next developer what your system does.
-
-In SDA, we encode meaning directly in types. `OrderStatus.SHIPPED` carries semantics. `status = "shipped"` is just bytes wearing a trench coat. Discriminated unions let us say "this is EmailNotification OR SmsNotification" instead of "this is a dict that maybe has 'email' or maybe has 'phone' and good luck figuring out which fields matter when."
-
-### 2. Constructive Proof: Build the Truth, Don't Assert It
-
-**The principle**: Every state transition should be provable through construction, not claimed through assertion.
-
-Look at the code you wrote last week. I bet there's a `# type: ignore` somewhere. Or a `cast()`. Or a comment that says "at this point we know X is valid." That's not confidence—that's hope dressed up as code.
-
-In SDA, we don't assert types, we construct them. We don't suppress warnings, we fix the design. When you transform data, you unpack it, transform each piece, and reconstruct the result. The successful construction IS the proof. No "trust me bro" required.
+Your models should be domain experts, not data buckets. But here's the real secret: SDA works not because of what it adds, but because of what it refuses to do. Every pattern you don't need. Every layer you don't add. Every abstraction you don't create.
 
 ```python
-# Don't assert - construct
-raw_data = {"amount": "10.50", "currency": "USD"}
-
-# ❌ Assertion (hope)
-payment = cast(Payment, raw_data)  # "Trust me"
-
-# ✅ Construction (proof)
-payment = Payment(
-    amount=Money.from_string(raw_data["amount"]),
-    currency=Currency(raw_data["currency"])
-)
-# If this succeeds, it's correct. If it fails, you know immediately.
+# What we write (data bucket)
+class Temperature:
+    celsius: float
+    
+# What we should write (domain expert)
+class Temperature(BaseModel):
+    celsius: Decimal = Field(ge=-273.15)  # Knows absolute zero
+    
+    @property
+    def fahrenheit(self) -> Decimal:
+        return self.celsius * Decimal('1.8') + 32
+    
+    @property
+    def state_of_water(self) -> WaterState:
+        if self.celsius <= 0:
+            return WaterState.SOLID
+        elif self.celsius >= 100:
+            return WaterState.GAS
+        return WaterState.LIQUID
 ```
 
-### 3. Locality of Behavior: Logic Lives with Data
-
-**The principle**: Distance between data and its behavior is proportional to bugs.
-
-Every time an OrderService calculates order totals, somewhere an angel loses its wings. The order KNOWS what it costs. Making a service calculate it is like asking your neighbor to tell you your own birthday.
-
-The most radical thing about SDA? Methods on models. I know, revolutionary concept from... *checks notes*... 1967. Yet half the Python codebases I see have models that are just property bags while services do all the thinking. That's not separation of concerns—that's separation of brain from body.
-
-### But Here's the Real Secret
-
-SDA works not because of what it adds, but because of what it refuses to do.
-
-We took the good principles from the last 60 years of software—cohesion, encapsulation, type safety—and threw out the corrupting additions that crept in during the enterprise Java fever dream:
-
-- **Kept**: Separation of concerns
-- **Threw out**: "Models shouldn't have methods"
-
-- **Kept**: Single responsibility  
-- **Threw out**: "Services should contain business logic"
-
-- **Kept**: Type safety
-- **Threw out**: "Defensive programming everywhere"
-
-- **Kept**: Make illegal states unrepresentable
-- **Threw out**: "Validate everything at runtime"
-
-SDA is software architecture by **subtraction**. Every pattern you don't need. Every layer you don't add. Every abstraction you don't create. 
-
-It's admitting that maybe, just maybe, when we separated our models from their behavior, our types from their meaning, and our proofs from our assertions, we weren't being sophisticated. We were being stupid.
-
-Your models should be so smart that reading them teaches you the business. If you have to explain what your model does, it's not doing enough. If you need a service to tell it how to behave, it doesn't know enough. If you're casting types and suppressing warnings, you're not proving enough.
-
-Welcome to SDA: All the wisdom, none of the bullshit.
+One teaches you about temperature. The other one just... holds a number.
 
 ## The Patterns That Matter
 
@@ -135,27 +88,17 @@ Welcome to SDA: All the wisdom, none of the bullshit.
 Every time you type `amount: float`, somewhere a developer cries debugging a currency mismatch. I've seen production systems lose thousands of dollars because someone forgot that the payment gateway expects cents but the invoice system uses dollars. True story.
 
 ```python
-# The bug factory (what we all write)
+# The bug factory
 def process_payment(amount: float, currency: str) -> float:
     # Hope everyone remembers amount is in cents!
     # Hope everyone passes currency in the same format!
     # Hope no one does math without considering currency!
     ...
 
-# The domain model (what we should write)
+# The domain model
 class Money(BaseModel):
     amount: Decimal
     currency: Currency
-    
-    @classmethod
-    def from_cents(cls, cents: int, currency: str) -> "Money":
-        """Constructive transformation from external representation"""
-        # Transform cents to decimal amount (explicit, not magic)
-        amount = Decimal(cents) / Decimal(100)
-        # Transform string to Currency enum (fail fast on bad currency)
-        validated_currency = Currency(currency)
-        # Construction IS validation
-        return cls(amount=amount, currency=validated_currency)
     
     def __add__(self, other: Money) -> Money:
         if self.currency != other.currency:
@@ -216,9 +159,35 @@ The order knows how to be an order. Revolutionary concept, I know.
 
 You know what's wild? Half the developers I show this to act like I just invented fire. "You can put methods... on your models?" Yes. Yes you can. It's been possible since roughly 1967 when Ole-Johan Dahl and Kristen Nygaard invented object-oriented programming. We just... forgot.
 
-### 3. Make Invalid States Unrepresentable (Discriminated Unions)
+### 3. Constructive Type Transformation (The Heart of SDA)
 
-This is the big one. The pattern that changes everything. Instead of defensive programming, use types that make bugs impossible.
+Every type transition must be provable through construction, not assertion. This is the difference between hoping your code works and knowing it does.
+
+```python
+# The assertion approach (hope)
+def process_payment(data: dict) -> Payment:
+    # "Trust me, this dict has the right shape"
+    return cast(Payment, data)  # type: ignore
+
+# The constructive approach (proof)
+def process_payment(data: dict) -> Payment:
+    # Step 1: Unpack explicitly
+    amount_raw = data.get("amount")
+    currency_raw = data.get("currency")
+    
+    # Step 2: Transform to domain types
+    amount = Money.from_string(amount_raw) if amount_raw else Money.zero()
+    currency = Currency(currency_raw) if currency_raw else Currency.USD
+    
+    # Step 3: Construct - if this succeeds, it's correct
+    return Payment(amount=amount, currency=currency)
+```
+
+No casts. No type ignores. No "trust me bro" comments. The successful construction IS the proof.
+
+### 4. Make Invalid States Unrepresentable (Discriminated Unions)
+
+The pattern that eliminates entire categories of bugs. Instead of defensive programming, use types that make bugs impossible.
 
 Remember every time you've written code like this?
 
@@ -280,7 +249,7 @@ No more "what if the dict doesn't have the key I expect?" Just types that work.
 
 The magic is in that `discriminator="type"`. Pydantic looks at the type field and automatically creates the right class. No isinstance checks, no manual dispatch. The type system is your router.
 
-### 4. State Machines That Actually State Machine
+### 5. State Machines That Actually State Machine
 
 Your business logic is full of state machines. Order workflows, user lifecycles, payment flows. But I bet they're implemented as string comparisons scattered across service methods, held together by hopes and comments that say "TODO: refactor this."
 
@@ -433,21 +402,22 @@ class Product(BaseModel):
     
     model_config = {"frozen": True}
     
-    def validate_purchase(self, quantity: Count) -> PurchaseValidation:
-        """Purchase rules expressed as type transformations"""
-        # Each rule returns a typed result, not a boolean
-        validations = [
-            QuantityValidation.from_count(quantity),
-            StockValidation.from_availability(quantity, self.stock.available),
-            CategoryValidation.from_limits(quantity, self.category.max_purchase_quantity)
-        ]
-        
-        # First failure short-circuits (type system enforces this)
-        for validation in validations:
-            if not validation.is_valid:
-                return validation.to_purchase_validation()
+    def check_purchase_eligibility(self, quantity: Count) -> PurchaseEligibility:
+        """All purchase rules in one place"""
+        if quantity <= 0:
+            return PurchaseEligibility.invalid_quantity()
+            
+        if quantity > self.stock.available:
+            return PurchaseEligibility.insufficient_stock(
+                requested=quantity,
+                available=self.stock.available
+            )
+            
+        if max_qty := self.category.max_purchase_quantity:
+            if quantity > max_qty:
+                return PurchaseEligibility.exceeds_limit(max_qty)
                 
-        return PurchaseValidation.approved()
+        return PurchaseEligibility.eligible()
     
     def reserve_stock(self, quantity: Count) -> "Product":
         """Returns new Product with updated stock"""
@@ -481,12 +451,12 @@ One warning though: once your team tastes this, they can't go back. I've watched
 
 ## Dealing with the Messy Outside World
 
-Here's the thing nobody tells you: the outside world doesn't follow SDA. Your database returns dictionaries. APIs send you JSON. Legacy systems speak XML from 2003. They don't care about your beautiful domain models.
+Here's the thing nobody tells you: the outside world doesn't follow SDA. Your database returns dictionaries. APIs send you JSON. Legacy systems speak XML from 2003.
 
-The trick is boundary intelligence - convert external data to domain models at the edges through **constructive transformation**:
+The trick is boundary intelligence - convert external data to domain models at the edges:
 
 ```python
-# ❌ Bad: Letting external structures infect your domain
+# Bad: Letting external structures infect your domain
 def process_api_order(api_data: dict) -> None:
     if api_data.get("type") == "standard":
         # Now dict surgery spreads through your codebase
@@ -494,36 +464,27 @@ def process_api_order(api_data: dict) -> None:
     elif api_data.get("type") == "express":
         process_express_order(api_data)
 
-# ✅ Good: Constructive transformation at the boundary
-def process_api_order(api_data: dict) -> OrderResult:
-    # Transform through construction, not assertion
-    order = parse_external_order(api_data)
-    return order.process()
+# Good: Convert at the boundary
+def process_api_order(api_data: dict) -> None:
+    # One place to handle external messiness
+    order = parse_external_order(api_data)  # Returns proper Order model
+    # Now work with type-safe domain models
+    result = order.process()
     
 def parse_external_order(data: dict) -> Order:
     """The DMZ between external chaos and internal sanity."""
-    # Step 1: Unpack external data explicitly
-    order_type_raw = data.get("type", "standard")
-    items_raw = data.get("items", [])
-    customer_raw = data.get("customer", {})
+    # This is the ONLY place that knows about external format
+    order_type = data.get("type", "standard")
     
-    # Step 2: Transform each component (fail fast on bad data)
-    order_type = OrderType(order_type_raw)
-    items = [LineItem.from_external(item) for item in items_raw]
-    customer = Customer.from_external(customer_raw)
-    
-    # Step 3: Construct domain model (construction IS validation)
+    # Convert to domain types immediately
     return Order(
-        type=order_type,
-        items=items,
-        customer=customer
+        type=OrderType(order_type),
+        items=[parse_line_item(item) for item in data.get("items", [])],
+        customer=parse_customer(data["customer"])
     )
-    # If we get here, the data is valid. No hope, just proof.
 ```
 
-Notice what we're NOT doing: no `cast()`, no `type: ignore`, no "I hope this dict has the right keys." We unpack, transform, reconstruct. If the external data is garbage, we find out at the boundary, not three layers deep in a service method.
-
-Keep the mess at the borders. Your core domain stays pristine.
+Keep the mess at the borders. Your core domain stays clean.
 
 ## Testing (The F1 Car Analogy)
 
@@ -551,20 +512,6 @@ def test_money_splits_evenly_with_remainder():
 ```
 
 Test the intelligence, not the plumbing.
-
-## The Lies We've Been Told
-
-Let's address the elephant in the room—the "best practices" that aren't:
-
-**"Keep your models dumb"** - No. Your models ARE your domain. A dumb model is a confession that you don't understand your business.
-
-**"Never use isinstance/hasattr/getattr"** - Actually, this one's true. But not because they're "unpythonic." Because if you need to inspect an object to know what to do with it, your design is broken. The object should know what to do with itself.
-
-**"Services provide flexibility"** - Services provide places to hide bad design. When everything's a service, nothing has meaning. When `OrderService.calculate_total()` exists, it's because `Order` doesn't know its own value.
-
-**"This creates tight coupling"** - No, it creates *correct* coupling. An order's total SHOULD be coupled to an order. That's not a design flaw, that's reality.
-
-**"But testing is harder"** - Wrong. Testing is *simpler*. You test `Order.total` instead of mocking seventeen dependencies to test `OrderService.calculate_total()`. One test, one concept, no mocks.
 
 ## The Mental Shift
 

@@ -1,0 +1,206 @@
+---
+description: Patterns for handling external system boundaries
+globs: ["**/*.py"]
+alwaysApply: true
+---
+
+# Boundary Intelligence Patterns
+
+## Core Principle
+Don't fight external systems—extract domain intelligence from them at the boundary.
+
+## Boundary Recognition
+- **External systems**: APIs, databases, file systems, parse trees, config files
+- **Domain models**: Your semantic understanding of external data
+- **Extraction layer**: Pure functions that cross boundaries once
+- **TypeAdapter**: Pydantic's tool for boundary validation
+
+## Constructive Boundary Transformation
+```python
+def process_api_response(raw_data: dict) -> DomainModel:
+    """Transform external data through construction."""
+    # Step 1: Unpack external structure
+    user_data = raw_data.get("user", {})
+    order_data = raw_data.get("order", {})
+    metadata = raw_data.get("meta", {})
+    
+    # Step 2: Transform to domain types
+    user = User.from_external(user_data) if user_data else User.anonymous()
+    order = Order.from_external(order_data) if order_data else None
+    context = Context.from_metadata(metadata)
+    
+    # Step 3: Construct domain model (construction IS validation)
+    return DomainModel(
+        user=user,
+        order=order,
+        context=context
+    )
+```
+
+## Single Extraction Point Pattern
+```python
+def extract_domain_event(external_data: dict) -> DomainEvent | None:
+    """Single place to convert external events to domain."""
+    event_type = external_data.get("type")
+    
+    # Type dispatch at boundary only
+    extractors = {
+        "user_action": extract_user_action,
+        "system_event": extract_system_event,
+        "notification": extract_notification
+    }
+    
+    extractor = extractors.get(event_type)
+    return extractor(external_data) if extractor else None
+
+def extract_user_action(data: dict) -> UserAction:
+    """Pure extraction function."""
+    return UserAction(
+        action=ActionType(data.get("action", "unknown")),
+        user_id=UserId(data.get("user_id")),
+        timestamp=parse_timestamp(data.get("timestamp"))
+    )
+```
+
+## TypeAdapter for Boundary Validation
+```python
+from pydantic import TypeAdapter
+
+# Define boundary adapters
+API_REQUEST_ADAPTER = TypeAdapter(ApiRequest)
+DB_ROW_ADAPTER = TypeAdapter(DatabaseRow)
+CONFIG_ADAPTER = TypeAdapter(Configuration)
+
+def handle_api_request(raw_request: dict) -> Response:
+    """Validate at boundary, then pure domain logic."""
+    # Boundary: Validate and convert
+    request = API_REQUEST_ADAPTER.validate_python(raw_request)
+    
+    # Domain: Pure business logic
+    command = request.to_command()
+    result = command.execute()
+    
+    # Boundary: Convert back to external format
+    return result.to_response()
+
+def load_from_database(row: dict) -> DomainEntity:
+    """Database row to domain model."""
+    validated_row = DB_ROW_ADAPTER.validate_python(row)
+    return DomainEntity.from_database(validated_row)
+```
+
+## Pure Functional Extraction
+```python
+class DocumentExtractor:
+    """Stateless extraction of domain meaning from documents."""
+    
+    @staticmethod
+    def extract_sections(document: ExternalDocument) -> list[Section]:
+        """Pure function: external document → domain sections."""
+        return [
+            Section.from_external(section_data)
+            for section_data in document.sections
+            if DocumentExtractor.is_valid_section(section_data)
+        ]
+    
+    @staticmethod
+    def is_valid_section(section_data: dict) -> bool:
+        """Validation at boundary."""
+        return bool(section_data.get("content"))
+
+def process_file(path: Path) -> ProcessedData:
+    """Separate I/O from processing."""
+    # Boundary: I/O operation
+    raw_content = path.read_text()
+    
+    # Domain: Pure transformation
+    parsed_data = parse_content(raw_content)
+    domain_data = DomainData.from_parsed(parsed_data)
+    
+    # Domain: Pure business logic
+    return domain_data.process()
+```
+
+## Boundary Service Pattern
+```python
+class ExternalApiClient:
+    """Boundary service for external API."""
+    
+    def fetch_user_data(self, user_id: UserId) -> UserData:
+        """Boundary crossing with immediate conversion."""
+        # External call
+        response = self._http_client.get(f"/users/{user_id.value}")
+        
+        # Immediate domain conversion at boundary
+        return UserData.from_api_response(response.json())
+    
+    def _http_client(self) -> HttpClient:
+        """Infrastructure dependency."""
+        return self._client
+
+class UserData(BaseModel):
+    """Domain representation of user data."""
+    id: UserId
+    profile: UserProfile
+    preferences: UserPreferences
+    
+    @classmethod
+    def from_api_response(cls, data: dict) -> "UserData":
+        """Constructive transformation from API format."""
+        return cls(
+            id=UserId(data["id"]),
+            profile=UserProfile.from_external(data["profile"]),
+            preferences=UserPreferences.from_external(data.get("prefs", {}))
+        )
+```
+
+## Metadata Extraction Pattern
+```python
+class ExternalEventProcessor:
+    """Extract metadata without coupling to external structure."""
+    
+    @staticmethod
+    def extract_metadata(external_obj: dict) -> EventMetadata:
+        """Pure extraction of semantic metadata."""
+        return EventMetadata(
+            source=extract_source(external_obj),
+            timestamp=extract_timestamp(external_obj),
+            version=extract_version(external_obj),
+            context=extract_context(external_obj)
+        )
+    
+    @staticmethod
+    def to_domain_event(external_obj: dict) -> DomainEvent:
+        """Full transformation with metadata."""
+        metadata = ExternalEventProcessor.extract_metadata(external_obj)
+        event_type = EventType(external_obj.get("type", "unknown"))
+        
+        # Construct domain event with metadata
+        return DomainEvent(
+            type=event_type,
+            metadata=metadata,
+            payload=extract_payload(external_obj, event_type)
+        )
+```
+
+## Boundary Rules
+
+### Required Patterns
+- **Single extraction point** - One place per external system type
+- **Immediate conversion** - External → Domain at boundary
+- **Pure extraction** - No side effects in transformation
+- **Explicit boundaries** - Clear separation from domain
+
+### Banned Patterns
+- **Leaky abstractions** - Domain wrapping external objects
+- **Mixed logic** - Boundary + domain in same function
+- **Stateful extraction** - Accumulating during crossing
+- **Deep external dispatch** - Multiple levels of type checking
+- **Late conversion** - External data deep in domain
+
+## Type System Boundary Principle
+When discriminated unions provide stronger guarantees than type checkers:
+- **Keep domain models strongly typed** - Never weaken for external data
+- **Use constructive transformation** - Unpack and explicitly type
+- **Type ignore is LAST RESORT** - Only when construction impossible
+- **Document domain guarantees** - Explain why type ignore is safe

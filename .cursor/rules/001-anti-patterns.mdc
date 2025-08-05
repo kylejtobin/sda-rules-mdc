@@ -1,0 +1,79 @@
+---
+description: SDA violations to avoid - what NOT to do
+globs: ["**/*.py"]
+alwaysApply: true
+---
+
+# SDA Anti-Patterns (What NOT to Do)
+
+## 🚨 ZERO TOLERANCE - INSTANT VIOLATIONS
+
+### Runtime Type Checking
+- **isinstance()** - BANNED. Use discriminated unions
+- **hasattr()/getattr()** - BANNED. Use discriminated unions
+- **type()** comparison - BANNED. Use discriminated unions
+
+### Conditional Logic
+- **if/elif chains** - BANNED. Use StrEnum with dispatch
+- **match/case** - BANNED. Use discriminated unions
+- **try/except for control flow** - BANNED. Use Result types
+
+### Type Assertions
+- **cast()** - BANNED. Use constructive transformation
+- **type: ignore** - BANNED except truly last resort with justification
+- **Any** type - BANNED. Use specific types or unions
+
+## Primitive Obsession
+```python
+# ❌ BANNED
+email: str = "user@example.com"
+user_id: int = 12345
+amount: float = 99.99
+
+# ✅ Use domain types
+email: Email = Email("user@example.com")
+user_id: UserId = UserId(12345)
+amount: Money = Money(amount=Decimal("99.99"), currency=Currency.USD)
+```
+
+## Enum Anti-Patterns
+- **Calling .value** - Defeats the purpose of enums
+- **String literals** - Create StrEnum instead
+- **Enum without behavior** - Add methods to enums
+- **External enum checking** - Let enum dispatch internally
+
+## Model Anti-Patterns
+- **Anemic models** - Data without behavior
+- **God models** - Too many responsibilities
+- **Mutable models** - Use frozen=True
+- **Business logic in services** - Logic belongs with data
+- **@computed_field for constants** - Use regular fields
+
+## Service Anti-Patterns
+- **Stateful services** - Services should be stateless
+- **Business decisions in services** - Models decide
+- **Service calling service** - Use dependency injection
+- **Mixed concerns** - Separate infrastructure from domain
+
+## Boundary Anti-Patterns
+- **Leaky abstractions** - Domain models wrapping external objects
+- **Mixed boundary/domain logic** - Separate extraction from processing
+- **Stateful extraction** - Use pure functions
+- **Multiple extraction points** - Single point per external type
+- **Late domain conversion** - Convert immediately at boundary
+
+## Testing Anti-Patterns
+- **Testing implementation** - Test behavior
+- **Mocking domain models** - Use real models
+- **God test cases** - One concern per test
+- **Testing getters/setters** - Test business logic
+
+## Code Organization Anti-Patterns
+- **Utils modules** - Put logic with related domain
+- **Helpers functions** - Methods on models instead
+- **Manager classes** - Use services or model methods
+- **Naked functions** - Group in classes by domain
+
+## NO EXCEPTIONS, NO EXCUSES
+**NO BOUNDARY EXCEPTIONS. NO "SAFE" WRAPPERS. NO LEGACY COMPATIBILITY.**
+Every violation is a bug waiting to happen.

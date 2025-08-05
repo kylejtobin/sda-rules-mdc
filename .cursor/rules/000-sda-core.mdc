@@ -6,51 +6,76 @@ alwaysApply: true
 
 # Semantic Domain Architecture Core
 
-## Fundamental Principle
+## Fundamental Philosophy
+**Software by Subtraction**: SDA works by removing architectural nonsense, not adding complexity.
 Data drives behavior. Business logic lives with the data it operates on.
-**Type transitions must be CONSTRUCTIVE transformations, not ASSERTIVE declarations.**
 
-## Constructive Type Proofs (The Heart of SDA)
+## Three Core Truths
 
-### Core Law
-Every type boundary crossing requires visible proof through explicit construction, not invisible claims through casting or ignoring.
+### 1. Semantic Encoding
+The gap between what code says and what it means is where bugs live.
+- Encode meaning directly in types
+- `OrderStatus.SHIPPED` not `status = "shipped"`
+- Types carry semantics, not just data
 
-### BANNED - Assertive Type Coercion
-- **cast()** - BANNED. Construct the type explicitly.
-- **type: ignore** - BANNED except as truly last resort with justification.
-- **Suppressing type errors** - BANNED. Fix through construction.
-
-### REQUIRED - Constructive Type Transformation
+### 2. Constructive Proof (The Heart of SDA)
+Every type transition must be provable through construction, not assertion.
 - **Unpack components explicitly** - Extract each field with its type
 - **Transform individually** - Convert each piece to domain type
 - **Reconstruct target type** - Build from typed components
-- **Construction IS proof** - Success proves type safety
+- **Construction IS validation** - Success proves type safety
 
-### The Unpacking Pattern
-1. Destructure source into typed components
-2. Transform each component to domain type
-3. Construct target from typed parts
-4. Construction failure = immediate error (good!)
+```python
+# ✅ Constructive transformation
+def to_domain(raw: dict) -> DomainModel:
+    # Unpack
+    id_raw = raw.get("id")
+    value_raw = raw.get("value")
+    # Transform
+    domain_id = DomainId(id_raw) if id_raw else DomainId.anonymous()
+    domain_value = Value.from_raw(value_raw)
+    # Reconstruct (construction IS validation)
+    return DomainModel(id=domain_id, value=domain_value)
+```
+
+### 3. Locality of Behavior
+Distance between data and its behavior is proportional to bugs.
+- Methods on models, not services
+- Models know their own business rules
+- Domain logic lives with domain data
 
 ## Architecture Pattern
-- **Models**: Domain intelligence (BaseModel with business logic)
+- **Models**: Domain intelligence (BaseModel with business logic methods)
 - **Services**: Infrastructure orchestration only (no business decisions)
 - **Protocols**: External dependency contracts
-
-## Separation of Concerns
-**Models decide, Services orchestrate:**
-- Models: Discriminated union business logic methods
-- Services: Infrastructure orchestration only
-- Never: Services making business decisions about models
+- **Boundaries**: Single extraction point for external data
 
 ## Type Dispatch Framework
 - Primitive with domain meaning → Value Object (BaseModel)
-- Finite choices with behavior → StrEnum with methods (never string literals)  
+- Finite choices with behavior → StrEnum with methods (NEVER string literals)  
 - Derived from other fields → @computed_field
 - External dependency → Protocol
 - Infrastructure coordination → Service
+- ALL branching logic → Discriminated unions
 
-## Immutability
-- All models frozen by default: `model_config = {"frozen": True}`
+## Immutability by Default
+- All models frozen: `model_config = {"frozen": True}`
 - State changes via `model_copy(update={"field": new_value})`
 - No direct mutation of model fields
+- Immutability forces explicit state transitions
+
+## Zero Tolerance Policies
+- **NO isinstance()** - Use discriminated unions
+- **NO hasattr()/getattr()** - Use discriminated unions
+- **NO if/elif chains** - Use StrEnum with dispatch
+- **NO cast()** - Use constructive transformation
+- **NO type: ignore** - Except truly last resort with justification
+- **NO naked primitives** - Wrap in domain types
+- **NO business logic in services** - Models decide
+
+## Boundary Principles
+- Single extraction point per external system type
+- Immediate domain conversion at boundaries
+- Pure extraction functions (no side effects)
+- TypeAdapter for validation at system edges
+- Never mix boundary crossing with domain logic

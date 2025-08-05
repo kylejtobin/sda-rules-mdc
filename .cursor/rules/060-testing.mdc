@@ -1,0 +1,112 @@
+---
+description: SDA testing approach and philosophy
+globs: ["**/test_*.py", "**/*_test.py"]
+alwaysApply: false
+---
+
+# SDA Testing Philosophy
+
+## Core Principle
+Test domain intelligence, not plumbing. If your models are smart, testing is simple.
+
+## What to Test
+### Test Domain Intelligence
+- Business rule enforcement
+- State transitions
+- Domain calculations
+- Model behavior
+
+### Don't Test
+- Pydantic validation (it works)
+- Frozen immutability (it works)
+- Type system (MyPy does this)
+- Infrastructure plumbing
+
+## Testing Patterns
+
+### Domain Model Testing
+```python
+class TestOrder:
+    """Test Order domain intelligence."""
+    
+    def test_calculates_total_from_items(self):
+        """Order knows its total from items."""
+        order = Order(
+            items=[
+                OrderItem(product=Product(price=Money.usd(10)), quantity=2),
+                OrderItem(product=Product(price=Money.usd(5)), quantity=1)
+            ],
+            status=OrderStatus.DRAFT
+        )
+        assert order.total == Money.usd(25)
+    
+    def test_state_transitions(self):
+        """Order enforces valid state transitions."""
+        draft_order = Order.create_draft(items=[...])
+        paid_order = draft_order.pay(payment=...)
+        
+        assert paid_order.status == OrderStatus.PAID
+        assert paid_order.can_ship()
+```
+
+### Boundary Testing
+```python
+class TestApiExtraction:
+    """Test boundary extraction logic."""
+    
+    def test_extracts_domain_from_api_response(self):
+        """API response becomes domain model."""
+        raw_response = {"user_id": 123, "amount": "10.50"}
+        
+        domain_model = extract_domain_model(raw_response)
+        
+        assert domain_model.user_id == UserId(123)
+        assert domain_model.amount == Money.usd(Decimal("10.50"))
+```
+
+### State Machine Testing
+```python
+class TestProcessingStateMachine:
+    """Test state machine logic."""
+    
+    def test_state_transitions(self):
+        """States know valid transitions."""
+        state = ProcessingState.PENDING
+        
+        assert state.can_transition_to(ProcessingState.ACTIVE)
+        assert not state.can_transition_to(ProcessingState.COMPLETED)
+```
+
+## Test Organization
+
+### File Structure
+```
+src/
+  models/
+    order.py
+tests/
+  models/
+    test_order.py  # Mirrors source structure
+```
+
+### Test Naming
+- `test_` prefix for test files
+- Descriptive test method names that explain behavior
+- Group related tests in classes
+
+## Key Testing Rules
+
+1. **Test behavior, not implementation**
+2. **Use real domain models, not mocks**
+3. **Test one concept per test**
+4. **Fast tests by default**
+5. **Integration tests for boundaries only**
+6. **Let type system handle type testing**
+
+## Anti-Patterns to Avoid
+- Testing getters/setters
+- Testing Pydantic validation
+- Mocking domain models
+- Testing implementation details
+- God test cases
+- Slow unit tests

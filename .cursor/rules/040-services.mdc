@@ -1,0 +1,218 @@
+---
+description: Service architecture patterns for SDA
+globs: ["**/*.py"]
+alwaysApply: true
+---
+
+# Service Architecture Patterns
+
+## Core Principle
+Services orchestrate infrastructure. Models make business decisions.
+Services should be stateless, initialized at startup, and never contain business logic.
+
+## Service Responsibilities
+
+### ✅ Services SHOULD
+- Orchestrate infrastructure (databases, APIs, file systems)
+- Handle I/O operations
+- Manage external dependencies through Protocols
+- Coordinate between domain models
+- Implement caching and performance optimizations
+
+### ❌ Services MUST NOT
+- Make business decisions
+- Contain conditional business logic
+- Know about domain rules
+- Transform between domain types
+- Validate business invariants
+
+## Stateless Service Pattern
+```python
+class EmailService:
+    """Infrastructure service for sending emails."""
+    
+    def __init__(self, smtp_client: SmtpProtocol):
+        self._client = smtp_client
+    
+    def send(self, notification: EmailNotification) -> SendResult:
+        """Pure orchestration - notification decides content."""
+        # Service just orchestrates, model has the intelligence
+        return self._client.send(
+            to=notification.recipient,
+            subject=notification.subject,
+            body=notification.render_body()  # Model knows how to render
+        )
+
+class NotificationService:
+    """Coordinates notification sending."""
+    
+    def __init__(self, email: EmailService, sms: SmsService):
+        self._email = email
+        self._sms = sms
+    
+    def send(self, notification: Notification) -> SendResult:
+        """Let the notification decide how to send itself."""
+        # No conditionals - polymorphism handles dispatch
+        return notification.send_via(self)
+```
+
+## Service State as Types
+```python
+class ServiceState(StrEnum):
+    """Service lifecycle as types."""
+    UNINITIALIZED = "uninitialized"
+    READY = "ready"
+    FAILED = "failed"
+    
+    def can_process(self) -> bool:
+        return self == ServiceState.READY
+
+class CacheService:
+    """Service with typed state."""
+    
+    def __init__(self):
+        self._state = ServiceState.UNINITIALIZED
+        self._cache: dict[CacheKey, CacheEntry] = {}
+    
+    def initialize(self, config: CacheConfig) -> None:
+        """Explicit initialization."""
+        self._configure(config)
+        self._state = ServiceState.READY
+    
+    def get(self, key: CacheKey) -> CacheEntry | None:
+        """State determines behavior."""
+        if not self._state.can_process():
+            raise ServiceNotReady(self._state)
+        return self._cache.get(key)
+```
+
+## Dependency Injection Pattern
+```python
+from typing import Protocol
+
+class DatabaseProtocol(Protocol):
+    """External dependency contract."""
+    def query(self, sql: Query) -> QueryResult: ...
+    def execute(self, command: Command) -> CommandResult: ...
+
+class UserRepository:
+    """Repository with injected dependencies."""
+    
+    def __init__(self, db: DatabaseProtocol):
+        self._db = db
+    
+    def find_by_id(self, user_id: UserId) -> User | None:
+        """Pure data access orchestration."""
+        result = self._db.query(
+            Query.select("users").where("id", user_id.value)
+        )
+        return User.from_database(result) if result else None
+    
+    def save(self, user: User) -> None:
+        """Let model serialize itself."""
+        self._db.execute(
+            Command.upsert("users", user.to_database())
+        )
+```
+
+## Service Registry Pattern
+```python
+class ServiceRegistry:
+    """Central service management."""
+    
+    def __init__(self):
+        self._services: dict[type, Any] = {}
+        self._factories: dict[type, Callable] = {}
+    
+    def register(self, service_type: type, instance: Any) -> None:
+        """Register service instance."""
+        self._services[service_type] = instance
+    
+    def register_factory(self, service_type: type, factory: Callable) -> None:
+        """Register service factory."""
+        self._factories[service_type] = factory
+    
+    def get[T](self, service_type: type[T]) -> T:
+        """Type-safe service retrieval."""
+        if service := self._services.get(service_type):
+            return service
+        
+        if factory := self._factories.get(service_type):
+            service = factory()
+            self._services[service_type] = service
+            return service
+        
+        raise ServiceNotRegistered(service_type)
+```
+
+## Configuration-Driven Services
+```python
+class ServiceConfig(BaseModel):
+    """Service configuration as domain model."""
+    database_url: DatabaseUrl
+    cache_size: int = Field(gt=0, default=1000)
+    retry_policy: RetryPolicy
+    timeout_seconds: int = Field(gt=0, default=30)
+    
+    model_config = {"frozen": True}
+    
+    def create_services(self) -> ServiceRegistry:
+        """Configuration knows how to create services."""
+        registry = ServiceRegistry()
+        
+        # Create all services at configuration time
+        registry.register(Database, self._create_database())
+        registry.register(Cache, self._create_cache())
+        registry.register(HttpClient, self._create_http_client())
+        
+        return registry
+    
+    def _create_database(self) -> Database:
+        return Database(
+            url=self.database_url,
+            timeout=self.timeout_seconds
+        )
+```
+
+## Pure Lookup Pattern
+```python
+# Module-level service instances
+_email_service: EmailService | None = None
+_sms_service: SmsService | None = None
+
+def initialize_services(config: ServiceConfig) -> None:
+    """Initialize all services at startup."""
+    global _email_service, _sms_service
+    _email_service = EmailService(config.smtp_config)
+    _sms_service = SmsService(config.twilio_config)
+
+def get_email_service() -> EmailService:
+    """Pure lookup, no conditionals."""
+    if _email_service is None:
+        raise ServiceNotInitialized("EmailService")
+    return _email_service
+
+# Or use a service locator
+class Services:
+    """Global service locator."""
+    _registry: ServiceRegistry = ServiceRegistry()
+    
+    @classmethod
+    def initialize(cls, config: ServiceConfig) -> None:
+        cls._registry = config.create_services()
+    
+    @classmethod
+    def get[T](cls, service_type: type[T]) -> T:
+        return cls._registry.get(service_type)
+```
+
+## Service Design Rules
+
+1. **Services are stateless** - State belongs in models or caches
+2. **Initialize at startup** - No lazy initialization
+3. **No business logic** - Models make decisions
+4. **Use Protocols** - Hide implementation details
+5. **Inject dependencies** - Don't create them internally
+6. **Type-safe retrieval** - Use generics for service lookup
+7. **Configuration as code** - Config models create services
+8. **Pure orchestration** - Services coordinate, models decide
