@@ -37,26 +37,7 @@ Don't fight external systems—extract domain intelligence from them.
 ## Type System Boundary Principle
 When discriminated unions provide stronger guarantees than static type checkers can verify:
 - **Keep domain models strongly typed** - Never weaken types to satisfy MyPy
-- **Prefer constructive transformation** - Unpack and explicitly type instead of type ignore
-- **Type ignore is LAST RESORT** - Only when construction is truly impossible
-- **Document the domain intelligence** - If you must use type ignore, explain the guarantee
+- **Use constructive transformation** - Unpack and explicitly type (see 000-sda-core)
+- **Type ignore is LAST RESORT** - Only when construction truly impossible
+- **Document domain guarantees** - If type ignore required, explain why it's safe
 - **Trust discriminated unions over type checkers** - Domain models encode more intelligence than MyPy can verify
-
-## Constructive Transformation at Boundaries (PREFERRED)
-```python
-# ✅ BEST: Unpack and explicitly construct
-if type(node) is ast.If:
-    # Extract components with explicit types
-    test_expr: ast.expr = node.test
-    body: list[ast.stmt] = node.body
-    
-    # Construct domain model from typed components
-    return ConditionalDomain(
-        condition=extract_condition(test_expr),
-        then_branch=extract_branch(body)
-    )
-
-# ⚠️ LAST RESORT: Type ignore only when construction impossible
-# (e.g., when framework requires specific signature)
-dispatch[node_type](node)  # type: ignore[arg-type] - Discriminated union guarantees ast.If
-```
