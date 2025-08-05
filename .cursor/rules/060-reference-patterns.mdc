@@ -1,96 +1,147 @@
 ---
-description: SDA transformation patterns and examples
+description: SDA patterns - correct implementations only
 globs:
 alwaysApply: false
 ---
 
 # SDA Reference Patterns
 
-## Conditional → Type Dispatch
+## Constructive Type Transformation
+**When:** Converting external data to domain models  
+**Use:** Unpack, transform, reconstruct - construction IS validation
+
 ```python
-# ❌ Before: Procedural conditional chains
-result_handler = get_result_handler(result_type)
-
-# ✅ After: Type dispatch with enum behavior
-class ValidationResult(StrEnum):
-    TYPE_MISMATCH = "type_mismatch"
-    MISSING_FIELD = "missing_field"
-    INVALID_VALUE = "invalid_value"
-
-    def create_report(self, context: ValidationContext) -> Report:
-        # Enum knows how to create its own reports
-        return Report(type=self, context=context)
+def process_data(raw: dict) -> DomainModel:
+    # Step 1: Unpack components explicitly
+    user_id_raw = raw.get("user_id")
+    amount_raw = raw.get("amount")
+    status_raw = raw.get("status")
+    
+    # Step 2: Transform each component to domain type
+    user_id = UserId(value=user_id_raw) if user_id_raw else UserId.anonymous()
+    amount = Amount.from_raw(amount_raw) if amount_raw else Amount.zero()
+    status = TransactionStatus(status_raw) if status_raw else TransactionStatus.PENDING
+    
+    # Step 3: Construct target from typed components
+    return DomainModel(
+        user_id=user_id,
+        amount=amount,
+        status=status
+    )
+    # Construction IS the proof of type safety
 ```
 
-## Runtime Checking → Discriminated Unions
-```python
-# ❌ Before: Runtime type checking with procedural logic
-order_processor = get_order_processor(order.status)
+## Enum-Based Type Dispatch
+**When:** Multiple behaviors based on a finite set of types  
+**Use:** StrEnum with behavioral methods
 
-# ✅ After: Discriminated union with type dispatch
+```python
+class ResultType(StrEnum):
+    VALIDATION_ERROR = "validation_error"
+    PROCESSING_ERROR = "processing_error"
+
+    def create_report(self, context: Context) -> Report:
+        # Enum knows how to create its own reports
+        return Report(type=self, context=context)
+    
+    def get_severity(self) -> Severity:
+        severities = {
+            ResultType.VALIDATION_ERROR: Severity.WARNING,
+            ResultType.PROCESSING_ERROR: Severity.CRITICAL
+        }
+        return severities[self]
+```
+
+## Discriminated Union Dispatch
+**When:** Different processing logic for different states  
+**Use:** StrEnum with method dispatch patterns
+
+```python
 class OrderStatus(StrEnum):
     PAID = "paid"
     DRAFT = "draft"
+    CANCELLED = "cancelled"
     
     def process(self, order: "Order") -> ProcessResult:
-        # Type-safe dispatch without generics
-        return {
+        # Type-safe dispatch without conditionals
+        processors = {
             OrderStatus.PAID: order.ship,
-            OrderStatus.DRAFT: order.reject_shipping
-        }[self](order)
+            OrderStatus.DRAFT: order.reject_shipping,
+            OrderStatus.CANCELLED: order.archive
+        }
+        return processors[self]()
+    
+    def allowed_transitions(self) -> set["OrderStatus"]:
+        transitions = {
+            OrderStatus.DRAFT: {OrderStatus.PAID, OrderStatus.CANCELLED},
+            OrderStatus.PAID: {OrderStatus.CANCELLED},
+            OrderStatus.CANCELLED: set()
+        }
+        return transitions[self]
 ```
 
-## Primitive → Value Object
-```python
-# ❌ Before: Primitive obsession
-file_path: str = "src/models.py"
-# Conditional logic with primitives
+## Value Objects for Domain Concepts
+**When:** Primitives have domain meaning and behavior  
+**Use:** BaseModel with domain intelligence
 
-# ✅ After: Value object with domain intelligence
+```python
 class FilePath(BaseModel):
     path: str
+    
+    model_config = {"frozen": True}
 
     @computed_field
     @property
     def file_type(self) -> FileType:
-        # Push string operations to type system
-        return FileType.from_path(self.path)
+        # Domain intelligence embedded in the type
+        extension = self.path.split('.')[-1] if '.' in self.path else ''
+        return FileType.from_extension(extension)
 
     @computed_field
     @property
     def module_name(self) -> ModuleName:
-        # Domain intelligence in value objects
+        # Derive related domain concepts
         return ModuleName.from_path(self.path)
+    
+    def relative_to(self, base: "FilePath") -> "FilePath":
+        # Domain operations return domain types
+        return FilePath(path=os.path.relpath(self.path, base.path))
 ```
 
-## State → Discriminated Union Pattern
-```python
-# ❌ Before: Procedural state logic
-state_processor = get_state_processor(current_state)
+## State-Based Behavior
+**When:** Different behavior based on object state  
+**Use:** StrEnum with state-specific methods
 
-# ✅ After: Discriminated union state dispatch
+```python
 class ProcessingState(StrEnum):
     ACTIVE = "active"
     INACTIVE = "inactive"
+    PENDING = "pending"
     
     def get_result(self, value: ProcessValue, default: ProcessValue) -> ProcessValue:
-        # Pure type dispatch without lambdas
-        return {
+        # State determines behavior
+        results = {
             ProcessingState.ACTIVE: value,
-            ProcessingState.INACTIVE: default
-        }[self]
+            ProcessingState.INACTIVE: default,
+            ProcessingState.PENDING: default
+        }
+        return results[self]
+    
+    def can_transition_to(self, new_state: "ProcessingState") -> bool:
+        # State machine rules encoded in enum
+        allowed = {
+            ProcessingState.PENDING: {ProcessingState.ACTIVE, ProcessingState.INACTIVE},
+            ProcessingState.ACTIVE: {ProcessingState.INACTIVE},
+            ProcessingState.INACTIVE: {ProcessingState.ACTIVE}
+        }
+        return new_state in allowed[self]
 ```
 
-## External System → Domain Intelligence
-```python
-# ❌ Before: Fighting external polymorphism with conditionals
-if external_event.get("type") == "user_action":
-    return UserActionEvent(external_event)
-elif external_event.get("type") == "system_alert":
-    return SystemAlertEvent(external_event)
-# Nested conditionals throughout processing
+## External System Boundary Crossing
+**When:** Converting external data formats to domain models  
+**Use:** Single extraction point with type dispatch
 
-# ✅ After: Single boundary extraction + pure domain logic
+```python
 def extract_domain_event(external_data: dict) -> DomainEvent | None:
     """Pure boundary crossing: External → Domain meaning."""
     event_type = external_data.get("type")
@@ -99,7 +150,7 @@ def extract_domain_event(external_data: dict) -> DomainEvent | None:
     # Single place for external type dispatch
     extractors = {
         "user_action": lambda d: UserAction.from_external(d, metadata),
-        "system_alert": lambda d: SystemAlert.from_external(d, metadata),
+        "system_notification": lambda d: SystemNotification.from_external(d, metadata),
         "scheduled_task": lambda d: ScheduledTask.from_external(d, metadata)
     }
     
@@ -111,6 +162,8 @@ class UserAction(BaseModel):
     action_type: ActionType
     metadata: EventMetadata
     
+    model_config = {"frozen": True}
+    
     @classmethod
     def from_external(cls, data: dict, metadata: EventMetadata) -> 'UserAction':
         # Boundary method: Extract semantics once
@@ -121,25 +174,25 @@ class UserAction(BaseModel):
     
     @computed_field
     @property
-    def requires_audit(self) -> bool:
+    def requires_authorization(self) -> bool:
         # Pure domain logic with no external dependencies
         return self.action_type.is_sensitive()
+    
+    def to_audit_entry(self) -> AuditEntry:
+        # Domain model knows how to transform itself
+        return AuditEntry(
+            event_type="user_action",
+            action=self.action_type,
+            timestamp=self.metadata.timestamp,
+            requires_auth=self.requires_authorization
+        )
 ```
 
-## Boundary Services → Pure Functions
-```python
-# ❌ Before: Service classes with stateful boundary handling
-class DocumentProcessor:
-    def __init__(self):
-        self.results = []  # Stateful accumulation
-    
-    def process_file(self, path):
-        # Mixed boundary + domain logic
-        raw_content = path.read_text()
-        self._parse_sections(raw_content)  # Stateful recursion
-        return self.results
+## Pure Functional Boundary Crossing
+**When:** Processing external data without side effects  
+**Use:** Pure functions that separate I/O from domain logic
 
-# ✅ After: Pure functional boundary crossing
+```python
 def process_document_file(file_path: Path) -> list[ProcessedSection]:
     """Pure function: File → Domain results."""
     raw_content = file_path.read_text()  # Boundary operation
@@ -161,31 +214,56 @@ class SectionExtractor:
             for child_section in self.extract(child)
         ]
         return ([current] if current else []) + children
+    
+    @staticmethod
+    def extract_domain_section(raw: dict) -> DomainSection | None:
+        """Convert raw data to domain model."""
+        if not raw.get("title"):
+            return None
+        
+        return DomainSection(
+            title=SectionTitle(raw["title"]),
+            content=SectionContent(raw.get("content", "")),
+            level=SectionLevel(raw.get("level", 1))
+        )
 ```
 
 ## TypeAdapter for Boundary Validation
-```python
-# ❌ Before: Manual validation at boundaries
-def process_request(raw_data: dict):
-    if 'user_id' not in raw_data:
-        raise ValueError("Missing user_id")
-    if not isinstance(raw_data['amount'], (int, float)):
-        raise ValueError("Invalid amount")
-    # Manual validation hell
+**When:** Validating external data at system boundaries  
+**Use:** TypeAdapter for automatic validation and type safety
 
-# ✅ After: TypeAdapter for boundary safety
+```python
 from pydantic import TypeAdapter
 
-# Boundary validation adapters
+# Define boundary validation adapters
 HTTP_REQUEST_ADAPTER = TypeAdapter(HttpRequestData)
 EXTERNAL_EVENT_ADAPTER = TypeAdapter(ExternalEventData)
+CONFIG_ADAPTER = TypeAdapter(SystemConfiguration)
 
 def process_request(raw_data: dict) -> ProcessResult:
     """Safe boundary crossing with validation."""
+    # TypeAdapter handles validation automatically
     validated_request = HTTP_REQUEST_ADAPTER.validate_python(raw_data)
+    
+    # Convert to domain model
     domain_command = extract_command_from_request(validated_request)
+    
+    # Pure domain logic
     return domain_command.execute()
 
+def load_configuration(config_path: Path) -> SystemConfiguration:
+    """Load and validate configuration."""
+    raw_config = json.loads(config_path.read_text())
+    
+    # TypeAdapter ensures type safety at boundary
+    return CONFIG_ADAPTER.validate_python(raw_config)
+```
+
+## Boundary Data Extraction
+**When:** Extracting domain meaning from external data structures  
+**Use:** Static methods with type dispatch for extraction
+
+```python
 class ExternalDataExtractor:
     """Explicit boundary handler using discriminated unions."""
     
@@ -203,60 +281,81 @@ class ExternalDataExtractor:
         return type_mapping.get(type_value, EntityType.UNKNOWN)
     
     @staticmethod
-    def extract_identifier(external_obj: dict) -> str:
+    def extract_identifier(external_obj: dict) -> Identifier:
         """Extract semantic identifier using type dispatch."""
         entity_type = external_obj.get("entity_type", "")
-        # Direct field access in extractors, no dynamic lookups
+        
+        # Type-specific extraction logic
         extractors = {
-            "customer": lambda obj: obj.get("customer_id", ""),
-            "product": lambda obj: obj.get("sku", ""),
-            "order": lambda obj: obj.get("order_number", "")
+            "customer": lambda obj: CustomerIdentifier(obj.get("customer_id", "")),
+            "product": lambda obj: ProductSKU(obj.get("sku", "")),
+            "order": lambda obj: OrderNumber(obj.get("order_number", ""))
         }
+        
         extractor = extractors.get(entity_type)
-        return extractor(external_obj) if extractor else "unknown"
+        return extractor(external_obj) if extractor else UnknownIdentifier()
+    
+    @staticmethod
+    def to_domain_model(external_obj: dict) -> DomainEntity:
+        """Complete transformation to domain model."""
+        entity_type = ExternalDataExtractor.extract_entity_type(external_obj)
+        identifier = ExternalDataExtractor.extract_identifier(external_obj)
+        
+        return DomainEntity(
+            type=entity_type,
+            id=identifier,
+            data=extract_entity_data(external_obj, entity_type)
+        )
 ```
 
-## Constructive Transformation at Boundaries
-```python
-# ❌ Before: Weakening types to satisfy type checker
-class ItemProcessor:
-    def process(self, item: object) -> ProcessResult:
-        # Weakened type requires runtime checks
-        if not isinstance(item, SpecificItem):
-            raise TypeError("Expected SpecificItem")
-        return self._process_specific(item)
+## Strong Typing with Constructive Transformation
+**When:** Handling polymorphic external data  
+**Use:** Strong types with explicit unpacking and construction
 
-# ✅ After: Strong typing with constructive transformation
+```python
 class ItemProcessor:
+    """Process items with strong typing."""
+    
     def process(self, item: SpecificItem) -> ProcessResult:
         # Strong type, no runtime checks needed
         domain_item = DomainItem.from_specific(item)
         return domain_item.process()
 
-# ✅ After: When dealing with external polymorphism
-def extract_domain_meaning(external_obj: ExternalType) -> DomainModel:
+def extract_domain_meaning(external_obj: dict) -> DomainModel:
     """Single boundary crossing with constructive transformation."""
     # Step 1: Extract type discriminator
-    obj_type = extract_type_indicator(external_obj)
+    obj_type = ObjectType(external_obj.get("type", "unknown"))
     
     # Step 2: Type-specific extraction with unpacking
-    if obj_type == ObjectType.TYPE_A:
-        # Unpack specific fields
-        field_1 = external_obj.specific_field_1
-        field_2 = external_obj.specific_field_2
-        
-        # Construct domain model
-        return TypeADomain(
-            value_1=DomainValue.from_raw(field_1),
-            value_2=DomainValue.from_raw(field_2)
-        )
-    elif obj_type == ObjectType.TYPE_B:
-        # Different unpacking for different type
-        data_field = external_obj.data_field
-        config_field = external_obj.config_field
-        
-        return TypeBDomain(
-            data=DomainData.from_raw(data_field),
-            config=DomainConfig.from_raw(config_field)
-        )
+    extractors = {
+        ObjectType.TYPE_A: extract_type_a,
+        ObjectType.TYPE_B: extract_type_b,
+        ObjectType.TYPE_C: extract_type_c
+    }
+    
+    extractor = extractors.get(obj_type, extract_unknown)
+    return extractor(external_obj)
+
+def extract_type_a(external_obj: dict) -> TypeADomain:
+    """Extract and construct Type A domain model."""
+    # Unpack specific fields
+    field_1 = external_obj.get("field_1", "")
+    field_2 = external_obj.get("field_2", 0)
+    
+    # Construct domain model with validation
+    return TypeADomain(
+        value_1=DomainValue.from_raw(field_1),
+        value_2=DomainValue.from_raw(field_2)
+    )
+
+def extract_type_b(external_obj: dict) -> TypeBDomain:
+    """Extract and construct Type B domain model."""
+    # Different unpacking for different type
+    data_field = external_obj.get("data", {})
+    config_field = external_obj.get("config", {})
+    
+    return TypeBDomain(
+        data=DomainData.from_raw(data_field),
+        config=DomainConfig.from_raw(config_field)
+    )
 ```
