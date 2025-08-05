@@ -29,21 +29,19 @@ Well, I'm done pretending that's sane.
 
 ## What You Get
 
-Ten modular rules that teach Cursor (and you) how to write models that model:
+Eight focused rules that teach Cursor (and you) how to write models that model:
 
 ### Core Rules (Always Active)
-- **[`000-sda-core.mdc`](.cursor/rules/000-sda-core.mdc)** - The philosophy. Models contain business logic. Services orchestrate.
-- **[`005-discriminated-unions-nuclear.mdc`](.cursor/rules/005-discriminated-unions-nuclear.mdc)** - The pattern that kills conditionals. No more if/elif chains.
+- **[`000-sda-core.mdc`](.cursor/rules/000-sda-core.mdc)** - The philosophy. Constructive types over assertions. Models contain business logic.
+- **[`001-anti-patterns.mdc`](.cursor/rules/001-anti-patterns.mdc)** - What NOT to do. Zero tolerance for isinstance(), hasattr(), if/elif chains.
+- **[`010-type-dispatch.mdc`](.cursor/rules/010-type-dispatch.mdc)** - Discriminated unions kill all conditionals. The pattern that changes everything.
 
-### Context-Aware Rules (Load When Needed)
-- **[`010-anti-patterns.mdc`](.cursor/rules/010-anti-patterns.mdc)** - The unholy trinity: isinstance(), hasattr(), and if/elif chains
-- **[`020-conditional-elimination.mdc`](.cursor/rules/020-conditional-elimination.mdc)** - Turn branching logic into type dispatch
-- **[`030-field-patterns.mdc`](.cursor/rules/030-field-patterns.mdc)** - When to use @computed_field vs regular fields
-- **[`040-python-standards.mdc`](.cursor/rules/040-python-standards.mdc)** - Type safety and modern Python patterns
-- **[`050-testing-philosophy.mdc`](.cursor/rules/050-testing-philosophy.mdc)** - Test behavior, not plumbing
-- **[`060-reference-patterns.mdc`](.cursor/rules/060-reference-patterns.mdc)** - Before/after examples that actually teach
-- **[`070-pydantic-power-tools.mdc`](.cursor/rules/070-pydantic-power-tools.mdc)** - Advanced Pydantic that enables it all
-- **[`090-boundary-intelligence.mdc`](.cursor/rules/090-boundary-intelligence.mdc)** - Dealing with the messy outside world
+### Implementation Rules (Context-Aware)
+- **[`020-domain-modeling.mdc`](.cursor/rules/020-domain-modeling.mdc)** - Rich types with Pydantic. When to use @computed_field. State machines in models.
+- **[`030-boundaries.mdc`](.cursor/rules/030-boundaries.mdc)** - Dealing with the messy outside world. Pure extraction functions. TypeAdapter patterns.
+- **[`040-services.mdc`](.cursor/rules/040-services.mdc)** - Services orchestrate, models decide. Stateless patterns. Dependency injection.
+- **[`050-python-standards.mdc`](.cursor/rules/050-python-standards.mdc)** - Type safety with zero tolerance. Modern Python 3.13+. Package management with uv.
+- **[`060-testing.mdc`](.cursor/rules/060-testing.mdc)** - Test domain intelligence, not plumbing. Real models over mocks.
 
 ### Why This Structure?
 
@@ -55,9 +53,9 @@ Cursor's context window isn't infinite. Loading every rule for every file is lik
 
 It's the difference between a focused assistant and one that's read too much and can't shut up about it.
 
-## The Core Idea
+## The Core Philosophy: Software by Subtraction
 
-Your models should be domain experts, not data buckets.
+Your models should be domain experts, not data buckets. But here's the real secret: SDA works not because of what it adds, but because of what it refuses to do. Every pattern you don't need. Every layer you don't add. Every abstraction you don't create.
 
 ```python
 # What we write (data bucket)
@@ -161,9 +159,35 @@ The order knows how to be an order. Revolutionary concept, I know.
 
 You know what's wild? Half the developers I show this to act like I just invented fire. "You can put methods... on your models?" Yes. Yes you can. It's been possible since roughly 1967 when Ole-Johan Dahl and Kristen Nygaard invented object-oriented programming. We just... forgot.
 
-### 3. Make Invalid States Unrepresentable (Discriminated Unions)
+### 3. Constructive Type Transformation (The Heart of SDA)
 
-This is the big one. The pattern that changes everything. Instead of defensive programming, use types that make bugs impossible.
+Every type transition must be provable through construction, not assertion. This is the difference between hoping your code works and knowing it does.
+
+```python
+# The assertion approach (hope)
+def process_payment(data: dict) -> Payment:
+    # "Trust me, this dict has the right shape"
+    return cast(Payment, data)  # type: ignore
+
+# The constructive approach (proof)
+def process_payment(data: dict) -> Payment:
+    # Step 1: Unpack explicitly
+    amount_raw = data.get("amount")
+    currency_raw = data.get("currency")
+    
+    # Step 2: Transform to domain types
+    amount = Money.from_string(amount_raw) if amount_raw else Money.zero()
+    currency = Currency(currency_raw) if currency_raw else Currency.USD
+    
+    # Step 3: Construct - if this succeeds, it's correct
+    return Payment(amount=amount, currency=currency)
+```
+
+No casts. No type ignores. No "trust me bro" comments. The successful construction IS the proof.
+
+### 4. Make Invalid States Unrepresentable (Discriminated Unions)
+
+The pattern that eliminates entire categories of bugs. Instead of defensive programming, use types that make bugs impossible.
 
 Remember every time you've written code like this?
 
@@ -225,7 +249,7 @@ No more "what if the dict doesn't have the key I expect?" Just types that work.
 
 The magic is in that `discriminator="type"`. Pydantic looks at the type field and automatically creates the right class. No isinstance checks, no manual dispatch. The type system is your router.
 
-### 4. State Machines That Actually State Machine
+### 5. State Machines That Actually State Machine
 
 Your business logic is full of state machines. Order workflows, user lifecycles, payment flows. But I bet they're implemented as string comparisons scattered across service methods, held together by hopes and comments that say "TODO: refactor this."
 
