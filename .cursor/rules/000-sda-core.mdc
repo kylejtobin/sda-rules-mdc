@@ -8,6 +8,29 @@ alwaysApply: true
 
 ## Fundamental Principle
 Data drives behavior. Business logic lives with the data it operates on.
+**Type transitions must be CONSTRUCTIVE transformations, not ASSERTIVE declarations.**
+
+## Constructive Type Proofs (The Heart of SDA)
+
+### Core Law
+Every type boundary crossing requires visible proof through explicit construction, not invisible claims through casting or ignoring.
+
+### BANNED - Assertive Type Coercion
+- **cast()** - BANNED. Construct the type explicitly.
+- **type: ignore** - BANNED except as truly last resort with justification.
+- **Suppressing type errors** - BANNED. Fix through construction.
+
+### REQUIRED - Constructive Type Transformation
+- **Unpack components explicitly** - Extract each field with its type
+- **Transform individually** - Convert each piece to domain type
+- **Reconstruct target type** - Build from typed components
+- **Construction IS proof** - Success proves type safety
+
+### The Unpacking Pattern
+1. Destructure source into typed components
+2. Transform each component to domain type
+3. Construct target from typed parts
+4. Construction failure = immediate error (good!)
 
 ## Architecture Pattern
 - **Models**: Domain intelligence (BaseModel with business logic)

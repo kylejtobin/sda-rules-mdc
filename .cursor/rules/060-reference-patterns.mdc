@@ -6,6 +6,36 @@ alwaysApply: false
 
 # SDA Reference Patterns
 
+## Constructive Type Transformation (The Heart of SDA)
+```python
+# ❌ Before: Assertive type coercion
+def process_data(raw: dict) -> DomainModel:
+    return cast(DomainModel, raw)  # "Trust me"
+    
+def handle_response(data: Any) -> ProcessedData:
+    return ProcessedData(**data)  # type: ignore  # Suppressing instead of solving
+
+# ✅ After: Constructive type transformation
+def process_data(raw: dict) -> DomainModel:
+    # Step 1: Unpack components explicitly
+    user_id_raw = raw.get("user_id")
+    amount_raw = raw.get("amount")
+    status_raw = raw.get("status")
+    
+    # Step 2: Transform each component to domain type
+    user_id = UserId(value=user_id_raw) if user_id_raw else UserId.anonymous()
+    amount = Amount.from_raw(amount_raw) if amount_raw else Amount.zero()
+    status = TransactionStatus(status_raw) if status_raw else TransactionStatus.PENDING
+    
+    # Step 3: Construct target from typed components
+    return DomainModel(
+        user_id=user_id,
+        amount=amount,
+        status=status
+    )
+    # Construction IS the proof of type safety
+```
+
 ## Conditional → Type Dispatch
 ```python
 # ❌ Before: Procedural conditional chains
@@ -185,26 +215,74 @@ def process_request(raw_data: dict) -> ProcessResult:
     return domain_command.execute()
 
 class ASTBoundaryExtractor:
-    """Explicit boundary handler between AST and domain."""
+    """Explicit boundary handler using discriminated unions."""
     
     @staticmethod
-    def safe_extract(node: ast.AST, attr: str, default: Any = None) -> Any:
-        """Boundary method: Safe attribute extraction."""
-        return getattr(node, attr, default)
+    def extract_node_type(node: ast.AST) -> NodeType:
+        """Convert external type to domain enum."""
+        type_mapping = {
+            ast.Name: NodeType.NAME,
+            ast.Attribute: NodeType.ATTRIBUTE,
+            ast.FunctionDef: NodeType.FUNCTION,
+            ast.If: NodeType.CONDITIONAL,
+            ast.For: NodeType.LOOP
+        }
+        return type_mapping.get(type(node), NodeType.UNKNOWN)
     
     @staticmethod
     def extract_identifier(node: ast.AST) -> str:
-        """Boundary method: Extract semantic name from various node types."""
-        # Single place for AST polymorphism
+        """Extract semantic name using type dispatch."""
+        # Direct attribute access in extractors, no getattr
         extractors = {
             ast.Name: lambda n: n.id,
             ast.Attribute: lambda n: n.attr,
             ast.FunctionDef: lambda n: n.name
         }
-        extractor = extractors.get(type(node), lambda n: "unknown")
+        extractor = extractors.get(type(node))
+        return extractor(node) if extractor else "unknown"
+```
+
+## Constructive Transformation at Boundaries
+```python
+# ❌ Before: Weakening types to satisfy type checker
+class ItemProcessor:
+    def process(self, item: object) -> ProcessResult:
+        # Weakened type requires runtime checks
+        if not isinstance(item, SpecificItem):
+            raise TypeError("Expected SpecificItem")
+        return self._process_specific(item)
+
+# ✅ After: Strong typing with constructive transformation
+class ItemProcessor:
+    def process(self, item: SpecificItem) -> ProcessResult:
+        # Strong type, no runtime checks needed
+        domain_item = DomainItem.from_specific(item)
+        return domain_item.process()
+
+# ✅ After: When dealing with external polymorphism
+def extract_domain_meaning(external_obj: ExternalType) -> DomainModel:
+    """Single boundary crossing with constructive transformation."""
+    # Step 1: Extract type discriminator
+    obj_type = extract_type_indicator(external_obj)
+    
+    # Step 2: Type-specific extraction with unpacking
+    if obj_type == ObjectType.TYPE_A:
+        # Unpack specific fields
+        field_1 = external_obj.specific_field_1
+        field_2 = external_obj.specific_field_2
         
-        try:
-            return str(extractor(node))
-        except Exception:
-            return "unknown"
+        # Construct domain model
+        return TypeADomain(
+            value_1=DomainValue.from_raw(field_1),
+            value_2=DomainValue.from_raw(field_2)
+        )
+    elif obj_type == ObjectType.TYPE_B:
+        # Different unpacking for different type
+        data_field = external_obj.data_field
+        config_field = external_obj.config_field
+        
+        return TypeBDomain(
+            data=DomainData.from_raw(data_field),
+            config=DomainConfig.from_raw(config_field)
+        )
 ```

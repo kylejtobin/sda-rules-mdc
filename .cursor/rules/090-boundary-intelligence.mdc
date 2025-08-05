@@ -33,3 +33,11 @@ Don't fight external systems—extract domain intelligence from them.
 - TypeAdapter for validation at system boundaries
 - Functional visitors that produce domain models, not side effects
 - Metadata extraction instead of direct external object wrapping
+
+## Type System Boundary Principle
+When discriminated unions provide stronger guarantees than static type checkers can verify:
+- **Keep domain models strongly typed** - Never weaken types to satisfy MyPy
+- **Use constructive transformation** - Unpack and explicitly type (see 000-sda-core)
+- **Type ignore is LAST RESORT** - Only when construction truly impossible
+- **Document domain guarantees** - If type ignore required, explain why it's safe
+- **Trust discriminated unions over type checkers** - Domain models encode more intelligence than MyPy can verify

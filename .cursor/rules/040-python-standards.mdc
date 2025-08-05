@@ -11,6 +11,9 @@ alwaysApply: false
 - `getattr` with Pydantic models is BANNED
 - Use `from typing import TYPE_CHECKING` for type-only imports
 - Use discriminated unions instead of `Optional` - ALWAYS prefer type intelligence
+- **Constructive types over casts** - Unpack and explicitly type (see 000-sda-core)
+- **Type ignore is LAST RESORT** - Only when constructive transformation truly impossible
+- **Never weaken types to satisfy MyPy** - Keep domain models strongly typed
 
 ## Package Management
 - Use `uv add` for adding packages
