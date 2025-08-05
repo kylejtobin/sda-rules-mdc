@@ -1,0 +1,179 @@
+---
+description: Type dispatch and discriminated unions - the core of SDA branching
+globs: ["**/*.py"]
+alwaysApply: true
+---
+
+# Type Dispatch and Discriminated Unions
+
+## 🚨 ABSOLUTE LAW
+**ALL BRANCHING LOGIC MUST USE DISCRIMINATED UNIONS.**
+No if. No match. No isinstance. DISCRIMINATED UNIONS.
+
+## Core Dispatch Patterns
+
+### 1. StrEnum with Behavioral Methods
+```python
+class OrderStatus(StrEnum):
+    DRAFT = "draft"
+    PAID = "paid"
+    SHIPPED = "shipped"
+    CANCELLED = "cancelled"
+    
+    def process(self, order: "Order") -> ProcessResult:
+        """Each status knows how to process itself."""
+        processors = {
+            OrderStatus.DRAFT: order.validate_draft,
+            OrderStatus.PAID: order.prepare_shipment,
+            OrderStatus.SHIPPED: order.track_delivery,
+            OrderStatus.CANCELLED: order.archive
+        }
+        return processors[self]()
+    
+    def allowed_transitions(self) -> set["OrderStatus"]:
+        """State machine encoded in enum."""
+        transitions = {
+            OrderStatus.DRAFT: {OrderStatus.PAID, OrderStatus.CANCELLED},
+            OrderStatus.PAID: {OrderStatus.SHIPPED, OrderStatus.CANCELLED},
+            OrderStatus.SHIPPED: {OrderStatus.CANCELLED},
+            OrderStatus.CANCELLED: set()
+        }
+        return transitions[self]
+    
+    def can_edit(self) -> bool:
+        """Status knows its own permissions."""
+        return self in {OrderStatus.DRAFT}
+```
+
+### 2. Pydantic Discriminated Unions
+```python
+from typing import Annotated, Union, Literal
+from pydantic import BaseModel, Field
+
+class EmailNotification(BaseModel):
+    type: Literal["email"]
+    recipient_email: str
+    subject: str
+    
+    def send(self) -> SendResult:
+        return send_email(self.recipient_email, self.subject)
+
+class SmsNotification(BaseModel):
+    type: Literal["sms"]
+    phone_number: str
+    message: str
+    
+    def send(self) -> SendResult:
+        return send_sms(self.phone_number, self.message)
+
+# Discriminated union with automatic dispatch
+Notification = Annotated[
+    Union[EmailNotification, SmsNotification],
+    Field(discriminator="type")
+]
+
+def process_notification(notification: Notification) -> SendResult:
+    # No conditionals - polymorphism handles dispatch
+    return notification.send()
+```
+
+### 3. Result Types Instead of Exceptions
+```python
+class OperationResult(StrEnum):
+    SUCCESS = "success"
+    VALIDATION_ERROR = "validation_error"
+    NOT_FOUND = "not_found"
+    UNAUTHORIZED = "unauthorized"
+    
+    def to_http_status(self) -> int:
+        """Result knows its HTTP representation."""
+        statuses = {
+            OperationResult.SUCCESS: 200,
+            OperationResult.VALIDATION_ERROR: 400,
+            OperationResult.NOT_FOUND: 404,
+            OperationResult.UNAUTHORIZED: 401
+        }
+        return statuses[self]
+    
+    def to_response(self, data: Any = None) -> Response:
+        """Build appropriate response for result type."""
+        return Response(
+            status=self.to_http_status(),
+            result_type=self,
+            data=data
+        )
+```
+
+### 4. State-Based Type Dispatch
+```python
+class ProcessingState(StrEnum):
+    PENDING = "pending"
+    ACTIVE = "active"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    
+    def process_event(self, event: Event) -> "ProcessingState":
+        """State transition logic encoded in enum."""
+        transitions = {
+            (ProcessingState.PENDING, EventType.START): ProcessingState.ACTIVE,
+            (ProcessingState.ACTIVE, EventType.PAUSE): ProcessingState.PAUSED,
+            (ProcessingState.PAUSED, EventType.RESUME): ProcessingState.ACTIVE,
+            (ProcessingState.ACTIVE, EventType.COMPLETE): ProcessingState.COMPLETED,
+        }
+        return transitions.get((self, event.type), self)
+    
+    def is_terminal(self) -> bool:
+        """State knows if it's final."""
+        return self == ProcessingState.COMPLETED
+```
+
+## Replacing Common Patterns
+
+### Boolean Flags → Two-State Enum
+```python
+# Instead of: if is_active:
+class ActiveState(StrEnum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    
+    def should_process(self) -> bool:
+        return self == ActiveState.ACTIVE
+```
+
+### Optional Fields → Explicit States
+```python
+# Instead of: if user.subscription:
+class UserSubscription(BaseModel):
+    type: Literal["subscribed"]
+    plan: SubscriptionPlan
+    expires_at: datetime
+
+class NoSubscription(BaseModel):
+    type: Literal["unsubscribed"]
+    cancelled_at: datetime | None = None
+
+UserState = Annotated[
+    Union[UserSubscription, NoSubscription],
+    Field(discriminator="type")
+]
+```
+
+### Type Checking → Type Dispatch
+```python
+# Instead of: if isinstance(obj, TypeA):
+def process_item(item: DomainItem) -> Result:
+    # Let the item process itself
+    return item.process()  # Polymorphism handles dispatch
+```
+
+## Rules for Type Dispatch
+
+1. **Every branch point needs a type** - No raw conditionals
+2. **Types carry behavior** - Methods on enums and models
+3. **Dispatch tables over conditionals** - Dictionary dispatch pattern
+4. **Fail fast at construction** - Invalid states unrepresentable
+5. **State machines in enums** - Transitions as enum methods
+6. **Polymorphism over conditionals** - Let objects handle themselves
+
+## The Golden Rule
+**If you're writing `if`, stop and create a type instead.**

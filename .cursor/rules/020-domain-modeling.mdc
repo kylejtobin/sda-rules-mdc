@@ -1,0 +1,231 @@
+---
+description: Domain modeling with Pydantic - rich types and field patterns
+globs: ["**/*.py"]
+alwaysApply: true
+---
+
+# Domain Modeling with Pydantic
+
+## Core Modeling Principles
+
+### 1. Rich Domain Types Over Primitives
+```python
+# ✅ Domain types with behavior
+class Email(BaseModel):
+    value: str
+    
+    model_config = {"frozen": True}
+    
+    @field_validator("value")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        if "@" not in v:
+            raise ValueError("Invalid email")
+        return v.lower()
+    
+    def domain(self) -> str:
+        return self.value.split("@")[1]
+    
+    def is_corporate(self) -> bool:
+        return not self.domain().endswith((".gmail.com", ".yahoo.com"))
+
+class Money(BaseModel):
+    amount: Decimal
+    currency: Currency
+    
+    model_config = {"frozen": True}
+    
+    @classmethod
+    def from_cents(cls, cents: int, currency: str) -> "Money":
+        """Constructive transformation from external format."""
+        return cls(
+            amount=Decimal(cents) / Decimal(100),
+            currency=Currency(currency)
+        )
+    
+    def add(self, other: "Money") -> "Money":
+        if self.currency != other.currency:
+            raise ValueError("Currency mismatch")
+        return Money(
+            amount=self.amount + other.amount,
+            currency=self.currency
+        )
+```
+
+### 2. Computed Fields for Derived Intelligence
+```python
+class Order(BaseModel):
+    items: list[OrderItem]
+    customer: Customer
+    status: OrderStatus
+    
+    model_config = {"frozen": True}
+    
+    @computed_field
+    @property
+    def total(self) -> Money:
+        """Derived from items - changes when items change."""
+        return sum_money([item.subtotal for item in self.items])
+    
+    @computed_field
+    @property
+    def requires_approval(self) -> bool:
+        """Business rule derived from current state."""
+        return self.total.amount > Decimal("1000") and self.status == OrderStatus.DRAFT
+    
+    @computed_field
+    @property
+    def shipping_method(self) -> ShippingMethod:
+        """Determined by order characteristics."""
+        if self.customer.is_premium:
+            return ShippingMethod.EXPRESS
+        return ShippingMethod.STANDARD if self.total.amount > Decimal("50") else ShippingMethod.ECONOMY
+```
+
+## Field Pattern Rules
+
+### When to Use @computed_field
+**USE for:**
+- Values derived from other fields in same model
+- Calculations that change when dependencies change
+- Business rules that depend on model state
+
+**DON'T USE for:**
+- Constants or static values (`return 2`)
+- External data sources
+- Simple aliases without computation
+
+### Field Validation and Constraints
+```python
+class Product(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    price: Decimal = Field(gt=0, decimal_places=2)
+    stock: int = Field(ge=0)
+    discount_percentage: int = Field(ge=0, le=100)
+    tags: list[ProductTag] = Field(default_factory=list, max_length=10)
+    
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, v: str) -> str:
+        return v.strip().title()
+    
+    @model_validator(mode="after")
+    def validate_discount(self) -> "Product":
+        if self.discount_percentage > 50 and self.stock < 10:
+            raise ValueError("High discount requires higher stock")
+        return self
+```
+
+### State-Dependent Fields with Discriminated Unions
+```python
+class DraftOrder(BaseModel):
+    type: Literal["draft"]
+    items: list[OrderItem]
+    notes: str = ""  # Draft-specific field
+    
+    def finalize(self) -> "ConfirmedOrder":
+        return ConfirmedOrder(
+            type="confirmed",
+            items=self.items,
+            confirmed_at=datetime.now()
+        )
+
+class ConfirmedOrder(BaseModel):
+    type: Literal["confirmed"]
+    items: list[OrderItem]
+    confirmed_at: datetime  # Confirmed-specific field
+    
+    def ship(self) -> "ShippedOrder":
+        return ShippedOrder(
+            type="shipped",
+            items=self.items,
+            confirmed_at=self.confirmed_at,
+            shipped_at=datetime.now()
+        )
+
+class ShippedOrder(BaseModel):
+    type: Literal["shipped"]
+    items: list[OrderItem]
+    confirmed_at: datetime
+    shipped_at: datetime  # Shipped-specific field
+    
+Order = Annotated[
+    Union[DraftOrder, ConfirmedOrder, ShippedOrder],
+    Field(discriminator="type")
+]
+```
+
+## Pydantic Power Features
+
+### TypeAdapter for External Data
+```python
+from pydantic import TypeAdapter
+
+# Add Pydantic intelligence to any type
+PriceAdapter = TypeAdapter(Decimal)
+EmailListAdapter = TypeAdapter(list[Email])
+
+def process_external_prices(raw_prices: list[Any]) -> list[Decimal]:
+    """Validate and convert external data."""
+    return [PriceAdapter.validate_python(p) for p in raw_prices]
+
+def load_email_list(data: dict) -> list[Email]:
+    """Parse and validate email list from config."""
+    return EmailListAdapter.validate_python(data.get("emails", []))
+```
+
+### Immutable State Transitions
+```python
+class Task(BaseModel):
+    title: str
+    status: TaskStatus
+    assigned_to: UserId | None = None
+    
+    model_config = {"frozen": True}
+    
+    def assign(self, user: UserId) -> "Task":
+        """Immutable state transition."""
+        return self.model_copy(update={
+            "assigned_to": user,
+            "status": TaskStatus.IN_PROGRESS
+        })
+    
+    def complete(self) -> "Task":
+        """Create new completed task."""
+        if not self.assigned_to:
+            raise ValueError("Cannot complete unassigned task")
+        return self.model_copy(update={"status": TaskStatus.COMPLETED})
+```
+
+### Model Serialization Intelligence
+```python
+class ApiResponse(BaseModel):
+    data: DomainModel
+    metadata: ResponseMetadata
+    
+    model_config = {
+        "frozen": True,
+        "json_encoders": {
+            Decimal: str,
+            datetime: lambda v: v.isoformat()
+        }
+    }
+    
+    def to_json(self) -> str:
+        """Smart serialization with custom encoders."""
+        return self.model_dump_json(exclude_none=True)
+    
+    @classmethod
+    def from_json(cls, json_str: str) -> "ApiResponse":
+        """Smart deserialization with validation."""
+        return cls.model_validate_json(json_str)
+```
+
+## Key Rules
+
+1. **Every domain concept gets a type** - No naked primitives
+2. **Models are frozen by default** - Immutability forces explicit transitions
+3. **Computed fields for derived state** - Not for constants
+4. **Discriminated unions for variants** - Different states = different types
+5. **TypeAdapter for boundaries** - Add Pydantic to external data
+6. **Rich methods on models** - Models know their business rules
