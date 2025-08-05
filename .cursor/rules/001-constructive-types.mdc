@@ -1,0 +1,60 @@
+---
+description: Constructive type transformations - the heart of SDA
+globs: ["**/*.py"]
+alwaysApply: true
+---
+
+# Constructive Type Proofs - The Heart of SDA
+
+## FUNDAMENTAL LAW
+**"Type transitions must be CONSTRUCTIVE transformations, not ASSERTIVE declarations."**
+
+## Core Principle
+Every type boundary crossing should be a **visible proof of correctness** through explicit construction, not an invisible claim through casting or ignoring.
+
+## BANNED - Assertive Type Coercion
+```python
+# ❌ NEVER DO THIS - Claiming without proving
+result = cast(TargetType, source_data)  # "Trust me bro"
+validated = TypeAdapter(Model).validate_python(data)  # type: ignore
+return some_function(param)  # type: ignore[arg-type]
+```
+
+## REQUIRED - Constructive Type Transformation
+```python
+# ✅ ALWAYS DO THIS - Prove through construction
+# Unpack → Transform → Reconstruct
+source_field_a = source_data.field_a
+source_field_b = source_data.field_b
+
+domain_a = DomainTypeA.from_raw(source_field_a)
+domain_b = DomainTypeB.from_raw(source_field_b)
+
+return TargetType(
+    field_a=domain_a,
+    field_b=domain_b
+)
+```
+
+## The Unpacking Pattern
+1. **Destructure explicitly** - Extract each component with its type
+2. **Transform individually** - Convert each piece to its domain type
+3. **Reconstruct target** - Build final type from typed components
+4. **Construction IS proof** - Success proves type safety
+
+## Why This Matters
+- **Type ignore/cast = "trust me"** - No proof, just assertion
+- **Explicit construction = "here's proof"** - Visible, verifiable transformation
+- **Extra lines = documentation** - Type journey is self-documenting
+- **Fail-fast guarantee** - Construction failure = immediate error (good!)
+
+## Connection to SDA Principles
+- **Discriminated unions** - Constructive dispatch, not runtime checking
+- **Value objects** - Constructive wrapping, not primitive assertion  
+- **Boundary intelligence** - Constructive extraction, not leaky abstraction
+- **No isinstance/getattr** - Because construction > inspection
+
+## The Golden Rule
+**"Show your type work. Make the type system work FOR you by making transformations visible."**
+
+Type safety isn't about suppressing warnings - it's about constructing proof.

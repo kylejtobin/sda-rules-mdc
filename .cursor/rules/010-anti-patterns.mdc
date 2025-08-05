@@ -31,3 +31,4 @@ alwaysApply: false
 ## Zero Tolerance Policy
 `isinstance/hasattr/getattr` is BANNED. No exceptions.
 Use discriminated unions for ALL branching logic.
+**NO BOUNDARY EXCEPTIONS. NO "SAFE" WRAPPERS. NO EXCUSES.**

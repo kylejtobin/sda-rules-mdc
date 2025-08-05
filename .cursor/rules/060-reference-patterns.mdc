@@ -185,26 +185,63 @@ def process_request(raw_data: dict) -> ProcessResult:
     return domain_command.execute()
 
 class ASTBoundaryExtractor:
-    """Explicit boundary handler between AST and domain."""
+    """Explicit boundary handler using discriminated unions."""
     
     @staticmethod
-    def safe_extract(node: ast.AST, attr: str, default: Any = None) -> Any:
-        """Boundary method: Safe attribute extraction."""
-        return getattr(node, attr, default)
+    def extract_node_type(node: ast.AST) -> NodeType:
+        """Convert external type to domain enum."""
+        type_mapping = {
+            ast.Name: NodeType.NAME,
+            ast.Attribute: NodeType.ATTRIBUTE,
+            ast.FunctionDef: NodeType.FUNCTION,
+            ast.If: NodeType.CONDITIONAL,
+            ast.For: NodeType.LOOP
+        }
+        return type_mapping.get(type(node), NodeType.UNKNOWN)
     
     @staticmethod
     def extract_identifier(node: ast.AST) -> str:
-        """Boundary method: Extract semantic name from various node types."""
-        # Single place for AST polymorphism
+        """Extract semantic name using type dispatch."""
+        # Direct attribute access in extractors, no getattr
         extractors = {
             ast.Name: lambda n: n.id,
             ast.Attribute: lambda n: n.attr,
             ast.FunctionDef: lambda n: n.name
         }
-        extractor = extractors.get(type(node), lambda n: "unknown")
-        
-        try:
-            return str(extractor(node))
-        except Exception:
-            return "unknown"
+        extractor = extractors.get(type(node))
+        return extractor(node) if extractor else "unknown"
+```
+
+## Type Boundary Justified Ignores
+```python
+# ❌ Before: Weakening types to satisfy MyPy
+class ConditionalAnalyzer:
+    @classmethod
+    def analyze_node(cls, node: ast.AST, context: Context) -> list[Finding]:
+        # Now needs runtime checks because we weakened the type
+        if not isinstance(node, ast.If):
+            raise TypeError("Expected ast.If")
+        conditional = ConditionalDomain.from_ast(node, context)
+        return conditional.analyze()
+
+# ✅ After: Strong typing with justified type ignore at boundary
+class ConditionalAnalyzer:
+    @classmethod
+    def analyze_node(cls, node: ast.If, context: Context) -> list[Finding]:
+        # Clean, strongly typed, no runtime checks needed
+        conditional = ConditionalDomain.from_ast(node, context)
+        return conditional.analyze()
+
+# At the dispatch boundary:
+def dispatch_analyzer(node_type: NodeType, node: ast.AST, context: Context) -> list[Finding]:
+    """Type dispatch with discriminated union guarantees."""
+    analyzers = {
+        NodeType.CONDITIONAL: lambda: ConditionalAnalyzer.analyze_node(
+            node, context  # type: ignore[arg-type] - NodeType.from_ast() guarantees ast.If
+        ),
+        NodeType.LOOP: lambda: LoopAnalyzer.analyze_node(
+            node, context  # type: ignore[arg-type] - NodeType.from_ast() guarantees ast.For
+        ),
+    }
+    return analyzers[node_type]()
 ```

@@ -8,6 +8,7 @@ alwaysApply: true
 
 ## Fundamental Principle
 Data drives behavior. Business logic lives with the data it operates on.
+**Type transformations must be constructive, not assertive. (See 001-constructive-types)**
 
 ## Architecture Pattern
 - **Models**: Domain intelligence (BaseModel with business logic)
