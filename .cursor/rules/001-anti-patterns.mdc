@@ -54,6 +54,8 @@ amount: Money = Money(amount=Decimal("99.99"), currency=Currency.USD)
 - **Business decisions in services** - Models decide
 - **Service calling service** - Use dependency injection
 - **Mixed concerns** - Separate infrastructure from domain
+- **Direct infrastructure imports** - Import protocols only
+- **Creating concrete dependencies** - Inject at boundaries
 
 ## Boundary Anti-Patterns
 - **Leaky abstractions** - Domain models wrapping external objects

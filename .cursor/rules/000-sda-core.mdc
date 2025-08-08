@@ -49,6 +49,7 @@ Distance between data and its behavior is proportional to bugs.
 - **Services**: Infrastructure orchestration only (no business decisions)
 - **Protocols**: External dependency contracts
 - **Boundaries**: Single extraction point for external data
+- **Dependency Inversion**: Services import protocols, never concrete implementations
 
 ## Type Dispatch Framework
 - Primitive with domain meaning → Value Object (BaseModel)
@@ -72,6 +73,7 @@ Distance between data and its behavior is proportional to bugs.
 - **NO type: ignore** - Except truly last resort with justification
 - **NO naked primitives** - Wrap in domain types
 - **NO business logic in services** - Models decide
+- **NO direct infrastructure imports** - Services use protocols only
 
 ## Boundary Principles
 - Single extraction point per external system type
