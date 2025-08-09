@@ -117,34 +117,8 @@ For each story, provide:
 - Breaking external contracts
 ```
 
-## Example Instantiation: Conversation Module
-
-Use the reference pattern above. Below is a concise example of the preflight and first story tailored to a conversation module. Replace paths as needed.
-
-```markdown
-## MANDATORY PREFLIGHT
-```bash
-find src/backend/conversation -maxdepth 2 -type f | sort
-rg -n 'from (llama_index|langchain)' src/backend/conversation
-rg -n '\b(Any|object)\b' src/backend/conversation
-rg -n 'dict\[str, str\]' src/backend/conversation
-mypy --strict src/backend/conversation src/backend/ai_models src/backend/vector
-ruff check src/backend/conversation src/backend/ai_models src/backend/vector
-```
-
-### Story 1: Extract Infrastructure [MANDATORY STOP]
-**Acceptance Criteria:**
-- [ ] All vector adapter/bridge code moved to `backend/vector/`
-- [ ] `apis/dependencies.py` rewired to new location
-- [ ] Zero infra imports in `conversation/`
-- [ ] All preflight commands pass
-
-**STOP**: Re-run preflight. Await confirmation before proceeding.
-```
-
 ## Enforcement Notes
-- Favor small, verified edits with mandatory stops after highest-risk changes.
-- Maintain strict parity with specifications; update documentation if behaviorally equivalent structures differ.
-- All branching must use discriminated unions; no runtime type checks.
-- Convert external formats at boundaries using constructive transformation and Pydantic TypeAdapter.
+- Favor small, verified edits with mandatory stops after highest-risk changes
+- All branching must use discriminated unions; no runtime type checks
+- Convert external formats at boundaries using constructive transformation and Pydantic TypeAdapter
 

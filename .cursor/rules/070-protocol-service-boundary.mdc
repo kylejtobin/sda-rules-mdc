@@ -22,6 +22,7 @@ Every module follows a three-part structure that enforces dependency inversion a
 - Receives all dependencies through constructor injection
 - Never creates its own dependencies
 - Contains the actual logic and orchestration
+- MUST delegate business logic to BaseModel domain objects
 
 ### 3. Boundary Wiring (`__init__.py`)
 - Provides creation functions that wire dependencies

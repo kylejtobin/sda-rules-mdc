@@ -19,47 +19,16 @@ alwaysApply: true
 - **isinstance** - Use discriminated unions
 
 ### Required Type Patterns
-```python
-# Type-only imports
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from expensive_module import ExpensiveType
-
-# Forward references for circular dependencies
-from __future__ import annotations
-
-# Generic types with constraints
-from typing import TypeVar
-
-T = TypeVar("T", bound=BaseModel)
-
-# Self-referential types
-from typing import Self
-
-class Node(BaseModel):
-    def add_child(self, child: Self) -> Self:
-        return self
-```
+- **TYPE_CHECKING**: Use for expensive imports
+- **__future__ annotations**: For circular dependencies  
+- **TypeVar with bounds**: `T = TypeVar("T", bound=BaseModel)`
+- **Self type**: For self-referential methods
 
 ## Modern Python (3.13+)
-
-### Required Modern Syntax
-```python
-# Union types with |
-def process(item: Order | Invoice | Payment) -> Result:
-    return item.process()
-
-# Type hints for all functions
-def calculate_total(items: list[Item]) -> Money:
-    return sum_money([item.price for item in items])
-
-# Generic syntax
-def first[T](items: list[T]) -> T | None:
-    return items[0] if items else None
-
-# Match statements BANNED - use discriminated unions instead
-```
+- **REQUIRED**: Union types with `|` syntax
+- **REQUIRED**: Type hints on all functions and methods
+- **REQUIRED**: Modern generic syntax `def func[T](items: list[T])`
+- **BANNED**: Match statements - use discriminated unions instead
 
 ## Package Management
 
@@ -76,175 +45,37 @@ def first[T](items: list[T]) -> T | None:
 - Lock file committed to repository
 
 ## Code Quality Tools
-
-### Linting with Ruff
-```bash
-# Check for issues
-ruff check .
-
-# Auto-fix safe issues
-ruff check --fix .
-
-# Format code
-ruff format .
-```
-
-### Type Checking with MyPy
-```bash
-# Strict type checking
-mypy --strict .
-
-# With specific config
-mypy --config-file pyproject.toml .
-```
-
-### Pre-commit Requirements
-- `ruff check` must pass
-- `ruff format` must be applied
-- `mypy --strict` must pass
-- No `type: ignore` without justification comment
+- **Ruff**: `ruff check .` and `ruff format .` 
+- **MyPy**: `mypy --strict .` required
+- **Pre-commit**: All checks must pass, no `type: ignore` without justification
 
 ## Import Organization
-
-### Import Order
-```python
-# 1. Standard library
-import json
-from pathlib import Path
-
-# 2. Third-party packages
-from pydantic import BaseModel, Field
-
-# 3. Local application imports
-from app.models import User, Order
-from app.services import EmailService
-```
-
-### Import Rules
-- No wildcard imports (`from x import *`)
-- Import modules, not individual functions (exceptions: typing, common utilities)
-- Group imports logically
-- Use `__all__` to define public API
+- **Order**: Standard library → Third-party → Local
+- **BANNED**: Wildcard imports (`from x import *`)
+- **REQUIRED**: Import modules, not functions (except typing)
+- **REQUIRED**: Use `__all__` for public API
 
 ## String Handling
-
-### Domain Strings
-```python
-# ✅ Use StrEnum for domain concepts
-class Status(StrEnum):
-    ACTIVE = "active"
-    INACTIVE = "inactive"
-
-# ❌ BANNED: String literals for domain concepts
-if status == "active":  # BANNED
-```
-
-### String Operations
-```python
-# Use f-strings for formatting
-message = f"Order {order.id} total: {order.total}"
-
-# Use raw strings for regex
-pattern = r"^\d{3}-\d{2}-\d{4}$"
-
-# Use triple quotes for multiline
-description = """
-    This is a detailed description
-    that spans multiple lines.
-"""
-```
+- **REQUIRED**: StrEnum for domain concepts, never string literals
+- **REQUIRED**: f-strings for formatting
+- **REQUIRED**: Raw strings for regex patterns
 
 ## Error Handling
-
-### Domain Errors
-```python
-class DomainError(Exception):
-    """Base class for domain errors."""
-    pass
-
-class ValidationError(DomainError):
-    """Validation failed."""
-    def __init__(self, field: FieldName, value: FieldValue, rule: ValidationRule):
-        self.field = field
-        self.value = value
-        self.rule = rule
-        super().__init__(f"Field {field} with value {value} violates {rule}")
-```
-
-### Result Types Over Exceptions
-```python
-# Prefer Result types for expected failures
-class OperationResult[T]:
-    success: bool
-    value: T | None
-    error: ErrorMessage | None
-```
+- **REQUIRED**: Domain-specific exception hierarchy
+- **REQUIRED**: Result types over exceptions for expected failures
+- **REQUIRED**: Structured error information (field, value, rule)
 
 ## Documentation
-
-### Docstring Format
-```python
-def process_order(order: Order) -> ProcessResult:
-    """Process an order through the fulfillment pipeline.
-    
-    Args:
-        order: The order to process
-        
-    Returns:
-        ProcessResult indicating success or failure
-        
-    Raises:
-        SystemError: If infrastructure is unavailable
-    """
-```
-
-### Type Hints ARE Documentation
-- Good type hints reduce need for docstrings
-- Focus docstrings on WHY, not WHAT
-- Document business rules, not obvious behavior
+- **REQUIRED**: Type hints on all functions (types ARE documentation)
+- **REQUIRED**: Docstrings for WHY, not WHAT
+- **REQUIRED**: Document business rules, not obvious behavior
 
 ## Testing Standards
-
-### Test Organization
-```python
-# Test file mirrors source file
-# src/models/order.py → tests/models/test_order.py
-
-class TestOrder:
-    """Test Order model behavior."""
-    
-    def test_total_calculation(self):
-        """Order calculates total from items."""
-        # Given
-        order = create_test_order()
-        
-        # When
-        total = order.total
-        
-        # Then
-        assert total == Money(amount=Decimal("99.99"), currency=Currency.USD)
-```
+- **REQUIRED**: Test files mirror source structure
+- **REQUIRED**: Class-based test organization
+- **REQUIRED**: Descriptive test method names explaining behavior
 
 ## Performance Considerations
-
-### Avoid Premature Optimization
-- Profile before optimizing
-- Focus on algorithmic improvements
-- Use caching where measured beneficial
-- Prefer readability until performance proven critical
-
-### Common Patterns
-```python
-# Use generators for large datasets
-def process_large_dataset(items: Iterable[Item]) -> Iterator[Result]:
-    for item in items:
-        yield item.process()
-
-# Use dataclasses for simple data containers
-from dataclasses import dataclass
-
-@dataclass(frozen=True)
-class Point:
-    x: float
-    y: float
-```
+- **REQUIRED**: Profile before optimizing
+- **REQUIRED**: Use generators for large datasets
+- **REQUIRED**: Prefer readability until performance proven critical
