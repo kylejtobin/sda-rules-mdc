@@ -39,24 +39,30 @@ def process_api_response(raw_data: dict) -> DomainModel:
 
 ## Single Extraction Point Pattern
 ```python
+class EventType(StrEnum):
+    USER_ACTION = "user_action"
+    SYSTEM_EVENT = "system_event"
+    NOTIFICATION = "notification"
+    UNKNOWN = "unknown"
+    
+    def extract(self, data: dict) -> DomainEvent | None:
+        """Each type knows how to extract itself."""
+        extractors = {
+            EventType.USER_ACTION: self._extract_user_action,
+            EventType.SYSTEM_EVENT: self._extract_system_event,
+            EventType.NOTIFICATION: self._extract_notification
+        }
+        return extractors.get(self, lambda _: None)(data)
+
 def extract_domain_event(external_data: dict) -> DomainEvent | None:
     """Single place to convert external events to domain."""
-    event_type = external_data.get("type")
-    
-    # Type dispatch at boundary only
-    extractors = {
-        "user_action": extract_user_action,
-        "system_event": extract_system_event,
-        "notification": extract_notification
-    }
-    
-    extractor = extractors.get(event_type)
-    return extractor(external_data) if extractor else None
+    event_type = EventType(external_data.get("type", EventType.UNKNOWN))
+    return event_type.extract(external_data)
 
 def extract_user_action(data: dict) -> UserAction:
     """Pure extraction function."""
     return UserAction(
-        action=ActionType(data.get("action", "unknown")),
+        action=ActionType(data.get("action", ActionType.UNKNOWN)),
         user_id=UserId(data.get("user_id")),
         timestamp=parse_timestamp(data.get("timestamp"))
     )
@@ -173,7 +179,7 @@ class ExternalEventProcessor:
     def to_domain_event(external_obj: dict) -> DomainEvent:
         """Full transformation with metadata."""
         metadata = ExternalEventProcessor.extract_metadata(external_obj)
-        event_type = EventType(external_obj.get("type", "unknown"))
+        event_type = EventType(external_obj.get("type", EventType.UNKNOWN))
         
         # Construct domain event with metadata
         return DomainEvent(

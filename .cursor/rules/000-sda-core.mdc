@@ -50,6 +50,7 @@ Distance between data and its behavior is proportional to bugs.
 - **Protocols**: External dependency contracts
 - **Boundaries**: Single extraction point for external data
 - **Dependency Inversion**: Services import protocols, never concrete implementations
+- **Module Structure**: Three-part Protocol-Service-Boundary pattern
 
 ## Type Dispatch Framework
 - Primitive with domain meaning → Value Object (BaseModel)
@@ -69,11 +70,20 @@ Distance between data and its behavior is proportional to bugs.
 - **NO isinstance()** - Use discriminated unions
 - **NO hasattr()/getattr()** - Use discriminated unions
 - **NO if/elif chains** - Use StrEnum with dispatch
+- **NO match/case** - Use discriminated unions
 - **NO cast()** - Use constructive transformation
 - **NO type: ignore** - Except truly last resort with justification
+- **NO Any type** - Use specific types or unions
 - **NO naked primitives** - Wrap in domain types
 - **NO business logic in services** - Models decide
 - **NO direct infrastructure imports** - Services use protocols only
+- **NO try/except for control flow** - Use Result types
+
+## Type System Requirements
+- Modern Python 3.13+ syntax with `|` unions and generic syntax
+- Pydantic v2 required for all domain models
+- Result types over exceptions for expected failures
+- Explicit type hints on all functions and methods
 
 ## Boundary Principles
 - Single extraction point per external system type
