@@ -1,0 +1,150 @@
+---
+description: Template for AI agent planning (SDA-compliant execution briefs)
+globs: []
+alwaysApply: true
+---
+
+# SDA Agent Planning Pattern
+
+This rule provides a reusable execution brief template for AI copilots to plan and drive SDA-compliant refactors and module alignments. The template enforces small, verified steps, strict type safety, and boundary discipline.
+
+## Reference Pattern: SDA Module Compliance Execution Brief
+
+```markdown
+# EPIC: [MODULE_NAME] SDA Compliance & Architecture Alignment
+
+## CONTEXT GATHERING
+Read these documents in order:
+1. Target state specification: [README/SPEC_PATH]
+2. SDA rules: .cursor/rules/*.mdc (especially 000-sda-core, 030-boundaries, 040-services)
+3. Current implementation: src/[MODULE_PATH]/**
+
+## MANDATORY PREFLIGHT
+Execute and attach outputs before any changes:
+```bash
+# Structure snapshot
+find src/[MODULE_PATH] -maxdepth 2 -type f | sort
+
+# Anti-pattern detection
+rg -n 'from (FORBIDDEN_IMPORTS)' src/[MODULE_PATH]
+rg -n '\b(Any|object|dict\[str, str\])\b' src/[MODULE_PATH]
+rg -n 'isinstance|hasattr|getattr' src/[MODULE_PATH]
+
+# Type system health
+mypy --strict src/[MODULE_PATH] [DEPENDENT_MODULES]
+ruff check src/[MODULE_PATH] [DEPENDENT_MODULES]
+
+# Behavior baseline (if applicable)
+pytest tests/[MODULE_PATH] -v
+```
+
+## HARD CONSTRAINTS (Zero Tolerance)
+1. **Structural Parity**: Module structure MUST match specification exactly
+2. **Boundary Discipline**:
+   - No infrastructure imports in domain modules
+   - Dependencies flow: domain → adapters → infrastructure
+3. **Type Safety**:
+   - Zero Any/object in domain interfaces
+   - Replace untyped dict with Value Objects
+   - All branching via discriminated unions
+4. **Behavior Preservation**:
+   - External API contracts unchanged
+   - All existing tests pass
+5. **Process Discipline**:
+   - No migration scaffolding
+   - Edit only existing files unless spec requires new ones
+   - Verify file existence before editing
+
+## RISK-ORDERED STORIES
+
+### Story 1: [HIGHEST_RISK_OPERATION] [MANDATORY STOP]
+**Why First:** [RATIONALE — usually boundary/infra extraction]
+**Acceptance Criteria:**
+- [ ] [SPECIFIC_MEASURABLE_OUTCOME]
+- [ ] All preflight checks still green
+- [ ] [SPECIFIC_INVARIANT_PRESERVED]
+
+**STOP**: Re-run preflight. Await confirmation before proceeding.
+
+### Story 2-N: [DESCENDING_RISK_ORDER]
+[Repeat pattern with decreasing risk/complexity]
+
+## STORY TEMPLATE
+### Story X: [DESCRIPTIVE_NAME]
+**SDA Pattern Applied:** [SPECIFIC_PATTERN from .cursor/rules]
+**Acceptance Criteria:**
+- [ ] [MEASURABLE_OUTCOME]
+- [ ] [TYPE_SAFETY_CHECK]
+- [ ] [BEHAVIOR_CHECK]
+
+**Files to Edit:**
+- path/to/file.py: [SPECIFIC_CHANGES]
+
+**Verification:**
+```bash
+[SPECIFIC_VERIFICATION_COMMANDS]
+```
+
+## POSTFLIGHT VERIFICATION
+```bash
+# Complete anti-pattern scan
+make check-sda src/[MODULE_PATH]
+
+# Type system verification
+mypy --strict src/[MODULE_PATH] --no-incremental
+
+# Behavior verification
+[E2E_SMOKE_TEST_COMMANDS]
+
+# Structural diff
+git diff --name-status HEAD~ | grep src/[MODULE_PATH]
+```
+
+## REPORTING REQUIREMENTS
+For each story, provide:
+1. **Edit List**: file:line with before/after snippets
+2. **SDA Rationale**: Which rule applied and why
+3. **Verification Output**: Preflight delta showing improvement
+4. **Risk Mitigation**: How behavior is preserved
+
+## COMMON PITFALLS TO AVOID
+- Adding temporary migration code
+- Widening types to satisfy mypy
+- Creating parallel structures
+- Mixing infrastructure with domain
+- Using isinstance/hasattr for dispatch
+- Leaving Any/object for later
+- Breaking external contracts
+```
+
+## Example Instantiation: Conversation Module
+
+Use the reference pattern above. Below is a concise example of the preflight and first story tailored to a conversation module. Replace paths as needed.
+
+```markdown
+## MANDATORY PREFLIGHT
+```bash
+find src/backend/conversation -maxdepth 2 -type f | sort
+rg -n 'from (llama_index|langchain)' src/backend/conversation
+rg -n '\b(Any|object)\b' src/backend/conversation
+rg -n 'dict\[str, str\]' src/backend/conversation
+mypy --strict src/backend/conversation src/backend/ai_models src/backend/vector
+ruff check src/backend/conversation src/backend/ai_models src/backend/vector
+```
+
+### Story 1: Extract Infrastructure [MANDATORY STOP]
+**Acceptance Criteria:**
+- [ ] All vector adapter/bridge code moved to `backend/vector/`
+- [ ] `apis/dependencies.py` rewired to new location
+- [ ] Zero infra imports in `conversation/`
+- [ ] All preflight commands pass
+
+**STOP**: Re-run preflight. Await confirmation before proceeding.
+```
+
+## Enforcement Notes
+- Favor small, verified edits with mandatory stops after highest-risk changes.
+- Maintain strict parity with specifications; update documentation if behaviorally equivalent structures differ.
+- All branching must use discriminated unions; no runtime type checks.
+- Convert external formats at boundaries using constructive transformation and Pydantic TypeAdapter.
+
