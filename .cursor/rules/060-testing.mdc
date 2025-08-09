@@ -25,74 +25,26 @@ Test domain intelligence, not plumbing. If your models are smart, testing is sim
 ## Testing Patterns
 
 ### Domain Model Testing
-```python
-class TestOrder:
-    """Test Order domain intelligence."""
-    
-    def test_calculates_total_from_items(self):
-        """Order knows its total from items."""
-        order = Order(
-            items=[
-                OrderItem(product=Product(price=Money.usd(10)), quantity=2),
-                OrderItem(product=Product(price=Money.usd(5)), quantity=1)
-            ],
-            status=OrderStatus.DRAFT
-        )
-        assert order.total == Money.usd(25)
-    
-    def test_state_transitions(self):
-        """Order enforces valid state transitions."""
-        draft_order = Order.create_draft(items=[...])
-        paid_order = draft_order.pay(payment=...)
-        
-        assert paid_order.status == OrderStatus.PAID
-        assert paid_order.can_ship()
-```
+- **REQUIRED**: Test business logic and calculations
+- **REQUIRED**: Test state transitions and rules
+- **REQUIRED**: Use real domain models, not mocks
+- **REQUIRED**: One concept per test
 
-### Boundary Testing
-```python
-class TestApiExtraction:
-    """Test boundary extraction logic."""
-    
-    def test_extracts_domain_from_api_response(self):
-        """API response becomes domain model."""
-        raw_response = {"user_id": 123, "amount": "10.50"}
-        
-        domain_model = extract_domain_model(raw_response)
-        
-        assert domain_model.user_id == UserId(123)
-        assert domain_model.amount == Money.usd(Decimal("10.50"))
-```
+### Boundary Testing  
+- **REQUIRED**: Test external data extraction to domain models
+- **REQUIRED**: Test TypeAdapter validation at boundaries
+- **REQUIRED**: Test constructive transformation patterns
 
 ### State Machine Testing
-```python
-class TestProcessingStateMachine:
-    """Test state machine logic."""
-    
-    def test_state_transitions(self):
-        """States know valid transitions."""
-        state = ProcessingState.PENDING
-        
-        assert state.can_transition_to(ProcessingState.ACTIVE)
-        assert not state.can_transition_to(ProcessingState.COMPLETED)
-```
+- **REQUIRED**: Test valid and invalid state transitions
+- **REQUIRED**: Test state-dependent behavior
+- **REQUIRED**: Test terminal state recognition
 
 ## Test Organization
-
-### File Structure
-```
-src/
-  models/
-    order.py
-tests/
-  models/
-    test_order.py  # Mirrors source structure
-```
-
-### Test Naming
-- `test_` prefix for test files
-- Descriptive test method names that explain behavior
-- Group related tests in classes
+- **REQUIRED**: Test files mirror source structure (`src/models/order.py` → `tests/models/test_order.py`)
+- **REQUIRED**: `test_` prefix for test files
+- **REQUIRED**: Descriptive test method names explaining behavior
+- **REQUIRED**: Group related tests in classes
 
 ## Key Testing Rules
 

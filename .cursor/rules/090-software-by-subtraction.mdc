@@ -1,0 +1,85 @@
+---
+description: Software by Subtraction philosophy
+globs: ["**/*.py"]
+alwaysApply: true
+---
+
+# Software by Subtraction Philosophy
+
+## Core Principle
+**Software by Subtraction**: Remove architectural complexity to enable domain complexity. Subtract ceremony, amplify capability.
+
+## The Complexity Budget Principle
+
+Every system has a **finite complexity budget**. Software by Subtraction ensures you spend it wisely:
+
+- **Architectural complexity** is **expense** - it costs mental energy but provides no business value
+- **Domain complexity** is **investment** - it directly serves user needs and business goals
+- **Zero-sum relationship** - Complexity spent on architecture is complexity unavailable for domain problems
+
+## Software by Subtraction is NOT
+
+### ❌ MISCONCEPTIONS
+- **Avoiding hard problems** - We tackle MORE complex challenges, not fewer
+- **Dumbing down algorithms** - We implement MORE sophisticated logic, not less
+- **Reducing features** - We deliver MORE capability through cleaner architecture
+- **Writing naive code** - We write MORE intelligent code with less ceremony
+- **Avoiding advanced techniques** - We use MORE powerful language features appropriately
+
+### ❌ ANTI-PATTERNS
+- **Feature reduction** - Cutting capabilities to avoid complexity
+- **Naive implementations** - Choosing simple algorithms when sophisticated ones are needed
+- **Avoiding libraries** - Reinventing wheels instead of using proven solutions
+- **Over-minimalism** - Removing necessary domain complexity along with architectural noise
+
+## Software by Subtraction IS
+
+### ✅ CORE PRACTICES
+- **Architectural discipline** - Choosing proven patterns over novel abstractions
+- **Type-driven design** - Encoding constraints in types, not runtime checks
+- **Domain-centric complexity** - Putting sophistication where it serves users
+- **Fearless refactoring** - Type safety enables confident large-scale changes
+- **Performance through simplicity** - Fewer layers means faster execution
+
+### ✅ ENABLING OUTCOMES
+- **Faster development** - Less ceremony means more time on real problems
+- **Higher reliability** - Type safety catches errors that runtime checks miss
+- **Better performance** - Fewer abstraction layers means better optimization
+- **Easier maintenance** - Clear architecture makes complex domains manageable
+- **Confident scaling** - Simple boundaries enable complex integrations
+
+## Real-World Applications
+- **Financial Systems**: Subtract validation layers → Add sophisticated pricing models
+- **Medical Diagnostics**: Subtract runtime checking → Add advanced ML inference  
+- **Autonomous Vehicles**: Subtract defensive programming → Add real-time control algorithms
+- **Scientific Computing**: Subtract parameter boilerplate → Add advanced numerical methods
+
+## The Subtraction Mindset
+
+### Before Adding, Ask:
+1. **Does this serve the domain?** - If not, it's probably architectural noise
+2. **Can types handle this?** - Let the type system eliminate runtime complexity
+3. **What am I enabling?** - Every abstraction should unlock new capabilities
+4. **What's the real problem?** - Solve the actual challenge, not the symptoms
+
+### When You Feel Complexity:
+- **Domain complexity** feels like **learning** - "This business rule is intricate"
+- **Architectural complexity** feels like **fighting** - "This framework is getting in my way"
+- **Good complexity** makes you **smarter about the problem**
+- **Bad complexity** makes you **confused about the solution**
+
+## Success Metrics
+### Signs You're Doing It Right:
+- Faster feature development, fewer runtime errors, easier onboarding
+- Confident refactoring, performance improvements
+
+### Warning Signs:
+- Slowing development, runtime surprises, cognitive overload, fear of change
+
+## The Ultimate Goal
+
+**Software by Subtraction** aims for **sophisticated simplicity**: systems that solve complex problems through clean, obvious architectures. The most advanced software should feel inevitable - like the only reasonable way to solve the problem.
+
+When done right, observers should think: *"Of course that's how you'd build a [trading system/medical device/autonomous vehicle]. How else would you do it?"*
+
+The sophistication lies in the domain intelligence, not the architectural cleverness.

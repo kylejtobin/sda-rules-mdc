@@ -20,23 +20,9 @@ The gap between what code says and what it means is where bugs live.
 
 ### 2. Constructive Proof (The Heart of SDA)
 Every type transition must be provable through construction, not assertion.
-- **Unpack components explicitly** - Extract each field with its type
-- **Transform individually** - Convert each piece to domain type
-- **Reconstruct target type** - Build from typed components
-- **Construction IS validation** - Success proves type safety
-
-```python
-# ✅ Constructive transformation
-def to_domain(raw: dict) -> DomainModel:
-    # Unpack
-    id_raw = raw.get("id")
-    value_raw = raw.get("value")
-    # Transform
-    domain_id = DomainId(id_raw) if id_raw else DomainId.anonymous()
-    domain_value = Value.from_raw(value_raw)
-    # Reconstruct (construction IS validation)
-    return DomainModel(id=domain_id, value=domain_value)
-```
+- **Step 1**: Unpack external structure explicitly
+- **Step 2**: Transform each component to domain type
+- **Step 3**: Reconstruct target type (construction IS validation)
 
 ### 3. Locality of Behavior
 Distance between data and its behavior is proportional to bugs.
@@ -81,13 +67,15 @@ Distance between data and its behavior is proportional to bugs.
 
 ## Type System Requirements
 - Modern Python 3.13+ syntax with `|` unions and generic syntax
-- Pydantic v2 required for all domain models
-- Result types over exceptions for expected failures
+- **Pydantic v2 MANDATORY** for all domain models
+- **BaseModel + frozen=True** for all domain types
+- **Discriminated unions** with `Field(discriminator="type")` for all branching
+- **TypeAdapter.validate_python()** at all boundaries
 - Explicit type hints on all functions and methods
 
 ## Boundary Principles
 - Single extraction point per external system type
-- Immediate domain conversion at boundaries
+- **MANDATORY TypeAdapter.validate_python()** for all external data
+- Immediate BaseModel conversion at boundaries
 - Pure extraction functions (no side effects)
-- TypeAdapter for validation at system edges
 - Never mix boundary crossing with domain logic

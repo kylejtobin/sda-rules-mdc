@@ -24,17 +24,9 @@ alwaysApply: true
 - **Any** type - BANNED. Use specific types or unions
 
 ## Primitive Obsession
-```python
-# ❌ BANNED
-email: str = "user@example.com"
-user_id: int = 12345
-amount: float = 99.99
-
-# ✅ Use domain types
-email: Email = Email("user@example.com")
-user_id: UserId = UserId(12345)
-amount: Money = Money(amount=Decimal("99.99"), currency=Currency.USD)
-```
+BANNED: All domain concepts MUST be Pydantic BaseModel, never naked primitives.
+- **BANNED**: `email: str`, `user_id: int`, `amount: float`
+- **REQUIRED**: `Email(BaseModel)`, `UserId(BaseModel)`, `Money(BaseModel)`
 
 ## Enum Anti-Patterns
 - **Calling .value** - Defeats the purpose of enums
@@ -43,11 +35,12 @@ amount: Money = Money(amount=Decimal("99.99"), currency=Currency.USD)
 - **External enum checking** - Let enum dispatch internally
 
 ## Model Anti-Patterns
-- **Anemic models** - Data without behavior
-- **God models** - Too many responsibilities
-- **Mutable models** - Use frozen=True
-- **Business logic in services** - Logic belongs with data
-- **@computed_field for constants** - Use regular fields
+- **Anemic models** - Data without behavior (MUST be BaseModel with methods)
+- **God models** - Too many responsibilities  
+- **Mutable models** - BANNED. Use `model_config = {"frozen": True}`
+- **Business logic in services** - Logic belongs with BaseModel data
+- **Pydantic @computed_field for constants** - Use regular fields, @computed_field for derived state only
+- **Non-BaseModel domain models** - BANNED. All domain models MUST inherit from BaseModel
 
 ## Service Anti-Patterns
 - **Stateful services** - Services should be stateless
@@ -58,11 +51,13 @@ amount: Money = Money(amount=Decimal("99.99"), currency=Currency.USD)
 - **Creating concrete dependencies** - Inject at boundaries
 
 ## Boundary Anti-Patterns
+- **Raw dict processing** - BANNED. Use Pydantic TypeAdapter.validate_python()
 - **Leaky abstractions** - Domain models wrapping external objects
 - **Mixed boundary/domain logic** - Separate extraction from processing
 - **Stateful extraction** - Use pure functions
 - **Multiple extraction points** - Single point per external type
-- **Late domain conversion** - Convert immediately at boundary
+- **Late domain conversion** - Convert immediately at boundary using TypeAdapter
+- **Skipping TypeAdapter** - BANNED. All external data MUST pass through TypeAdapter
 
 ## Testing Anti-Patterns
 - **Testing implementation** - Test behavior
