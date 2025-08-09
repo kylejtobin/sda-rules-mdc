@@ -54,6 +54,8 @@ amount: Money = Money(amount=Decimal("99.99"), currency=Currency.USD)
 - **Business decisions in services** - Models decide
 - **Service calling service** - Use dependency injection
 - **Mixed concerns** - Separate infrastructure from domain
+- **Direct infrastructure imports** - Import protocols only
+- **Creating concrete dependencies** - Inject at boundaries
 
 ## Boundary Anti-Patterns
 - **Leaky abstractions** - Domain models wrapping external objects
@@ -73,6 +75,8 @@ amount: Money = Money(amount=Decimal("99.99"), currency=Currency.USD)
 - **Helpers functions** - Methods on models instead
 - **Manager classes** - Use services or model methods
 - **Naked functions** - Group in classes by domain
+- **Mixed module structure** - Follow Protocol-Service-Boundary pattern
+- **Service imports in modules** - Import only protocols and creation functions
 
 ## NO EXCEPTIONS, NO EXCUSES
 **NO BOUNDARY EXCEPTIONS. NO "SAFE" WRAPPERS. NO LEGACY COMPATIBILITY.**

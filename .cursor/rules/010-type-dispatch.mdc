@@ -95,7 +95,7 @@ class OperationResult(StrEnum):
         }
         return statuses[self]
     
-    def to_response(self, data: Any = None) -> Response:
+    def to_response(self, data: ResponseData = None) -> Response:
         """Build appropriate response for result type."""
         return Response(
             status=self.to_http_status(),

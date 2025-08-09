@@ -25,6 +25,8 @@ Services should be stateless, initialized at startup, and never contain business
 - Know about domain rules
 - Transform between domain types
 - Validate business invariants
+- Import concrete infrastructure implementations
+- Depend on `infra.*` or `adapters.*` modules directly
 
 ## Stateless Service Pattern
 ```python
@@ -121,10 +123,10 @@ class ServiceRegistry:
     """Central service management."""
     
     def __init__(self):
-        self._services: dict[type, Any] = {}
-        self._factories: dict[type, Callable] = {}
+        self._services: dict[type, ServiceInstance] = {}
+        self._factories: dict[type, Callable[[], ServiceInstance]] = {}
     
-    def register(self, service_type: type, instance: Any) -> None:
+    def register(self, service_type: type, instance: ServiceInstance) -> None:
         """Register service instance."""
         self._services[service_type] = instance
     
@@ -216,3 +218,6 @@ class Services:
 6. **Type-safe retrieval** - Use generics for service lookup
 7. **Configuration as code** - Config models create services
 8. **Pure orchestration** - Services coordinate, models decide
+9. **Import protocols only** - Services depend on abstractions, not implementations
+10. **Wire at boundaries** - Concrete implementations only at app entry points
+11. **Follow module structure** - Use Protocol-Service-Boundary pattern

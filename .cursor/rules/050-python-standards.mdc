@@ -164,7 +164,7 @@ class DomainError(Exception):
 
 class ValidationError(DomainError):
     """Validation failed."""
-    def __init__(self, field: str, value: Any, rule: str):
+    def __init__(self, field: FieldName, value: FieldValue, rule: ValidationRule):
         self.field = field
         self.value = value
         self.rule = rule
@@ -174,10 +174,10 @@ class ValidationError(DomainError):
 ### Result Types Over Exceptions
 ```python
 # Prefer Result types for expected failures
-class OperationResult:
+class OperationResult[T]:
     success: bool
-    value: Any | None
-    error: str | None
+    value: T | None
+    error: ErrorMessage | None
 ```
 
 ## Documentation
