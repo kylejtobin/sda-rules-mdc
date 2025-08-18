@@ -1,78 +1,70 @@
 ---
-description: SDA violations to avoid - what NOT to do
+description: SDA violations to avoid - TOXIC patterns that poison codebases
 globs: ["**/*.py"]
 alwaysApply: true
 ---
 
-# SDA Anti-Patterns (What NOT to Do)
+# 🚨 TOXIC ANTI-PATTERNS - ARCHITECTURAL POISON 🚨
 
-## 🚨 ZERO TOLERANCE - INSTANT VIOLATIONS
+These patterns are **INTELLECTUAL BANKRUPTCY**. They represent the **FAILURE TO MODEL DOMAINS** and the **ABDICATION OF MATHEMATICAL THINKING**.
 
-### Runtime Type Checking
-- **isinstance()** - BANNED. Use discriminated unions
-- **hasattr()/getattr()** - BANNED. Use discriminated unions
-- **type()** comparison - BANNED. Use discriminated unions
+## 💀 RUNTIME TYPE CHECKING - THE COWARD'S DISPATCH
 
-### Conditional Logic
-- **if/elif chains** - BANNED. Use StrEnum with dispatch
-- **match/case** - BANNED. Use discriminated unions
-- **try/except for control flow** - BANNED. Use Result types
+**isinstance() / hasattr() / getattr() / type()** - These are the tools of those who **REFUSE TO THINK AT COMPILE TIME**. Every runtime type check is an **ADMISSION OF DESIGN FAILURE**.
 
-### Type Assertions
-- **cast()** - BANNED. Use constructive transformation
-- **type: ignore** - BANNED except truly last resort with justification
-- **Any** type - BANNED. Use specific types or unions
+## 🤮 STRINGLY-TYPED PROGRAMMING - PRIMITIVE BRAIN ROT
 
-## Primitive Obsession
-BANNED: All domain concepts MUST be Pydantic BaseModel, never naked primitives.
-- **BANNED**: `email: str`, `user_id: int`, `amount: float`
-- **REQUIRED**: `Email(BaseModel)`, `UserId(BaseModel)`, `Money(BaseModel)`
+**Naked strings, raw integers, bare floats** - This is what happens when developers **FEAR DOMAIN MODELING**. Every string literal is a **CONFESSION** that you don't understand your own domain.
 
-## Enum Anti-Patterns
-- **Calling .value** - Defeats the purpose of enums
-- **String literals** - Create StrEnum instead
-- **Enum without behavior** - Add methods to enums
-- **External enum checking** - Let enum dispatch internally
+Primitive obsession isn't just lazy - it's **SEMANTICALLY BANKRUPT**.
 
-## Model Anti-Patterns
-- **Anemic models** - Data without behavior (MUST be BaseModel with methods)
-- **God models** - Too many responsibilities  
-- **Mutable models** - BANNED. Use `model_config = {"frozen": True}`
-- **Business logic in services** - Logic belongs with BaseModel data
-- **Pydantic @computed_field for constants** - Use regular fields, @computed_field for derived state only
-- **Non-BaseModel domain models** - BANNED. All domain models MUST inherit from BaseModel
+## 🗑️ CONDITIONAL SEWAGE - IF/ELIF DUMPSTERS
 
-## Service Anti-Patterns
-- **Stateful services** - Services should be stateless
-- **Business decisions in services** - Models decide
-- **Service calling service** - Use dependency injection
-- **Mixed concerns** - Separate infrastructure from domain
-- **Direct infrastructure imports** - Import protocols only
-- **Creating concrete dependencies** - Inject at boundaries
+**if/elif chains, match/case statements** - The **GARBAGE HEAP** where logic goes to die. You're not programming - you're building a **DECISION LANDFILL**.
 
-## Boundary Anti-Patterns
-- **Raw dict processing** - BANNED. Use Pydantic TypeAdapter.validate_python()
-- **Leaky abstractions** - Domain models wrapping external objects
-- **Mixed boundary/domain logic** - Separate extraction from processing
-- **Stateful extraction** - Use pure functions
-- **Multiple extraction points** - Single point per external type
-- **Late domain conversion** - Convert immediately at boundary using TypeAdapter
-- **Skipping TypeAdapter** - BANNED. All external data MUST pass through TypeAdapter
+## 🧟 ANEMIC MODELS - ZOMBIE DATA STRUCTURES
 
-## Testing Anti-Patterns
-- **Testing implementation** - Test behavior
-- **Mocking domain models** - Use real models
-- **God test cases** - One concern per test
-- **Testing getters/setters** - Test business logic
+**Data without behavior** - These aren't models, they're **CORPSES**. This is **OBJECT-ORIENTED NECROMANCY**.
 
-## Code Organization Anti-Patterns
-- **Utils modules** - Put logic with related domain
-- **Helpers functions** - Methods on models instead
-- **Manager classes** - Use services or model methods
-- **Naked functions** - Group in classes by domain
-- **Mixed module structure** - Follow Protocol-Service-Boundary pattern
-- **Service imports in modules** - Import only protocols and creation functions
+Your models should be **INTELLIGENT BEINGS**, not vegetative states.
 
-## NO EXCEPTIONS, NO EXCUSES
-**NO BOUNDARY EXCEPTIONS. NO "SAFE" WRAPPERS. NO LEGACY COMPATIBILITY.**
-Every violation is a bug waiting to happen.
+## 🏚️ SERVICE LAYER SLUMS - BUSINESS LOGIC GHETTOS
+
+**Business logic in services** - This is where **DOMAIN INTELLIGENCE GOES TO DIE**. Services making business decisions is **ARCHITECTURAL INSANITY**.
+
+Services orchestrate. Models think.
+
+## ☣️ ANY TYPE - THE VOID THAT CONSUMES SAFETY
+
+**Any, object, untyped dicts** - This is **GIVING UP**. It's the **BLACK HOLE** where type safety goes to die. Every `Any` is a **FUTURE PRODUCTION INCIDENT**.
+
+## 🤢 TRY/EXCEPT FLOW CONTROL - EXCEPTION VOMIT
+
+**Using exceptions for control flow** - This isn't error handling, it's **FLOW CONTROL THROUGH FAILURE**. Result types exist. Use them.
+
+## 💩 MUTABLE DOMAIN MODELS - SHAPESHIFTER HELL
+
+**Mutable models** - These are **LIES WAITING TO HAPPEN**. It's **STATE CHAOS** masquerading as flexibility.
+
+Immutability isn't a constraint - it's **MATHEMATICAL HONESTY**.
+
+## 🦠 BOUNDARY CONTAMINATION - EXTERNAL INFECTION
+
+**Raw dicts, skipping TypeAdapter, late conversions** - This is **LETTING THE OUTSIDE WORLD POISON YOUR DOMAIN**. Your boundaries are **QUARANTINE ZONES**.
+
+## 💀 CONCRETE IMPORT PLAGUE - ARCHITECTURAL AIDS
+
+**Importing concretes across modules** - This is the **#1 DESTROYER OF CODEBASES**. Every concrete import is **ARCHITECTURAL CANCER**.
+
+This isn't coupling - it's **ARCHITECTURAL SUICIDE**.
+
+**ONLY IMPORT**: provider Protocol(s) and create_[provider]_service from src.provider.
+**TYPE ALL** params/returns as provider Protocols; never provider concretes or types.
+**PROVIDERS OWN** construction/config; consumers call zero-arg verbs on Protocols.
+**NO CROSS-MODULE** submodule imports.
+
+## THE MATHEMATICAL SIN
+
+Every anti-pattern here represents **REFUSING TO MODEL YOUR DOMAIN**. You're not "fixing mypy errors" - you're **ENCODING BUSINESS TRUTH IN MATHEMATICS**.
+
+**THERE ARE NO EXCEPTIONS. THERE ARE NO EXCUSES.**

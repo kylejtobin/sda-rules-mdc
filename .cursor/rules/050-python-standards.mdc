@@ -6,76 +6,58 @@ alwaysApply: true
 
 # Python Standards for SDA
 
+You write **modern Python** because old syntax is **admitting defeat**.
+You type everything because `Any` is **giving up on knowing your own code**.
+You respect the language by using its **full power**.
+
 ## Type Safety (Zero Tolerance)
+Using `Any` is saying "I don't care what happens here."
+Using `cast()` is lying to the type checker.
+Using `type: ignore` is covering up your failures.
 
-### BANNED Types and Patterns
-- **Any** - Use specific types or unions
-- **dict** without types - Use `dict[str, int]` or domain models
-- **list** without types - Use `list[Item]`
-- **Optional** for business logic - Use discriminated unions
-- **cast()** - Use constructive transformation
-- **type: ignore** - Only as truly last resort with justification
-- **getattr/hasattr** - Use discriminated unions
-- **isinstance** - Use discriminated unions
+### Your Type Discipline
+- **Any** → Use specific types or unions
+- **dict** → Use typed dicts or domain models
+- **cast()** → Use constructive transformation
+- **type: ignore** → Fix the actual problem
+- **isinstance** → Use discriminated unions
 
-### Required Type Patterns
-- **TYPE_CHECKING**: Use for expensive imports
-- **__future__ annotations**: For circular dependencies  
-- **TypeVar with bounds**: `T = TypeVar("T", bound=BaseModel)`
-- **Self type**: For self-referential methods
+### Advanced Patterns You Use Naturally
+**You bound your generics. You use modern syntax.**
 
 ## Modern Python (3.13+)
-- **REQUIRED**: Union types with `|` syntax
-- **REQUIRED**: Type hints on all functions and methods
-- **REQUIRED**: Modern generic syntax `def func[T](items: list[T])`
-- **BANNED**: Match statements - use discriminated unions instead
+You use union syntax because old-style unions are **verbose garbage**.
+You use modern generics because module-level TypeVar is **2015 thinking**.
 
 ## Package Management
 
-### Commands
-- **Add package**: `uv add package-name`
-- **Add dev dependency**: `uv add --dev package-name`
-- **Update**: `uv lock --upgrade-package package-name`
-- **Remove**: `uv remove package-name`
+**uv** because pip is slow and poetry is overcomplicated:
+- Use uv add for packages
+- Use uv lock for reproducible builds
+- Use pyproject.toml for modern packaging
 
-### Requirements
-- Pydantic v2.5+ required
-- Python 3.13+ required
-- All dependencies in `pyproject.toml`
-- Lock file committed to repository
+## Code Quality
+**mypy --strict** because anything less is **accepting mediocrity**.
+**ruff** because it's fast and you value your time.
 
-## Code Quality Tools
-- **Ruff**: `ruff check .` and `ruff format .` 
-- **MyPy**: `mypy --strict .` required
-- **Pre-commit**: All checks must pass, no `type: ignore` without justification
+## Tooling Enforcement
 
-## Import Organization
-- **Order**: Standard library → Third-party → Local
-- **BANNED**: Wildcard imports (`from x import *`)
-- **REQUIRED**: Import modules, not functions (except typing)
-- **REQUIRED**: Use `__all__` for public API
+**Why tooling matters**: Manual code review can't catch architectural violations at scale. These tools encode SDA principles so violations are impossible.
 
-## String Handling
-- **REQUIRED**: StrEnum for domain concepts, never string literals
-- **REQUIRED**: f-strings for formatting
-- **REQUIRED**: Raw strings for regex patterns
+### Linting Rules
+- **Forbid submodule imports across modules** - Prevents dependency spaghetti
+- **Detect concrete type usage** - Enforces Protocol-only boundaries  
+- **Protocol requirements** - Makes architectural violations visible
 
-## Error Handling
-- **REQUIRED**: Domain-specific exception hierarchy
-- **REQUIRED**: Result types over exceptions for expected failures
-- **REQUIRED**: Structured error information (field, value, rule)
+### CI Checks  
+- **No type: ignore** except with explicit justification
+- **Protocol coverage** - All external dependencies typed as Protocols
+- **Boundary validation** - TypeAdapter.validate_python() at all ingress points
 
-## Documentation
-- **REQUIRED**: Type hints on all functions (types ARE documentation)
-- **REQUIRED**: Docstrings for WHY, not WHAT
-- **REQUIRED**: Document business rules, not obvious behavior
+### Templates and Scaffolding
+- **PSB scaffolds** - Auto-generate protocols.py, service.py, __init__.py structure
+- **Boundary checklists** - Validation templates for external integrations
 
-## Testing Standards
-- **REQUIRED**: Test files mirror source structure
-- **REQUIRED**: Class-based test organization
-- **REQUIRED**: Descriptive test method names explaining behavior
-
-## Performance Considerations
-- **REQUIRED**: Profile before optimizing
-- **REQUIRED**: Use generators for large datasets
-- **REQUIRED**: Prefer readability until performance proven critical
+## The Truth
+Good Python code uses every feature the language offers to **express domain truth**.
+Bad Python code looks like it was written in 2010 and never updated.
