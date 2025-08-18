@@ -6,59 +6,41 @@ alwaysApply: false
 
 # SDA Testing Philosophy
 
-## Core Principle
-Test domain intelligence, not plumbing. If your models are smart, testing is simple.
+Testing getters and setters is **insulting to your intelligence**.
+Testing Pydantic validation is **admitting you don't trust mathematics**.
+Testing type annotations is **what cowards do instead of thinking**.
 
-## What to Test
-### Test Domain Intelligence
-- Business rule enforcement
-- State transitions
-- Domain calculations
-- Model behavior
+You test **domain intelligence**, not plumbing.
 
-### Don't Test
-- Pydantic validation (it works)
-- Frozen immutability (it works)
-- Type system (MyPy does this)
-- Infrastructure plumbing
+## What Deserves Your Time
 
-## Testing Patterns
+### Domain Intelligence
+**This is BUSINESS LOGIC - worth testing**
 
-### Domain Model Testing
-- **REQUIRED**: Test business logic and calculations
-- **REQUIRED**: Test state transitions and rules
-- **REQUIRED**: Use real domain models, not mocks
-- **REQUIRED**: One concept per test
+### State Transitions
+**This is DOMAIN RULES - worth testing**
 
-### Boundary Testing  
-- **REQUIRED**: Test external data extraction to domain models
-- **REQUIRED**: Test TypeAdapter validation at boundaries
-- **REQUIRED**: Test constructive transformation patterns
+### Boundary Transformations
+**This is YOUR CODE - worth testing**
 
-### State Machine Testing
-- **REQUIRED**: Test valid and invalid state transitions
-- **REQUIRED**: Test state-dependent behavior
-- **REQUIRED**: Test terminal state recognition
+## What Insults You
 
-## Test Organization
-- **REQUIRED**: Test files mirror source structure (`src/models/order.py` → `tests/models/test_order.py`)
-- **REQUIRED**: `test_` prefix for test files
-- **REQUIRED**: Descriptive test method names explaining behavior
-- **REQUIRED**: Group related tests in classes
+- Testing getters → **Are you serious?**
+- Testing Pydantic validation → **Do you not trust math?**
+- Testing frozen models are immutable → **Why not test gravity?**
+- Mocking domain models → **Missing the entire point**
 
-## Key Testing Rules
+## Consequences
+**If you test plumbing instead of domain logic**: Your tests become brittle maintenance burdens that break on every refactor while missing actual business rule violations.
 
-1. **Test behavior, not implementation**
-2. **Use real domain models, not mocks**
-3. **Test one concept per test**
-4. **Fast tests by default**
-5. **Integration tests for boundaries only**
-6. **Let type system handle type testing**
+## The Testing Truth
 
-## Anti-Patterns to Avoid
-- Testing getters/setters
-- Testing Pydantic validation
-- Mocking domain models
-- Testing implementation details
-- God test cases
-- Slow unit tests
+**If your models are intelligent, your tests are simple.**
+**If your tests are complex, your models are stupid.**
+
+Good tests read like **executable documentation of business rules**.
+Bad tests read like **paranoid verification of language features**.
+
+## The Rule
+
+Test the **decisions** your code makes, not the **tools** it uses.

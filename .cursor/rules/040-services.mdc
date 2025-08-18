@@ -6,77 +6,40 @@ alwaysApply: true
 
 # Service Architecture Patterns
 
-## Core Principle
-Services orchestrate infrastructure. Models make business decisions.
-Services should be stateless, initialized at startup, and never contain business logic.
+Services making business decisions is like **the postal service reading your mail**.
+It's not just wrong - it's **ARCHITECTURAL INSANITY**.
 
-## Service Responsibilities
+Services orchestrate. Models think. **Confuse these and you've built chaos.**
 
-### ✅ Services SHOULD
-- Orchestrate infrastructure (databases, APIs, file systems)
-- Handle I/O operations
-- Manage external dependencies through Protocols
-- Coordinate between domain models
-- Implement caching and performance optimizations
+## Core Service Discipline
 
-### ❌ Services MUST NOT
-- Make business decisions (BaseModel domain models decide)
-- Contain conditional business logic
-- Know about domain rules
-- Transform between domain types (BaseModel handles own transformations)
-- Validate business invariants (BaseModel validation handles this)
-- Import concrete infrastructure implementations
-- Depend on `infra.*` or `adapters.*` modules directly
+### Services Are Dumb Orchestrators
+**If your service has an if statement about business logic, you've already failed.**
 
-## Stateless Service Pattern
-- **REQUIRED**: Services MUST receive dependencies via constructor injection
-- **REQUIRED**: Services MUST delegate intelligence to BaseModel domain objects
-- **REQUIRED**: Use polymorphism for dispatch, never conditionals
-- **BANNED**: Business logic in services - models decide behavior
+### Dependency Injection Only
+Services that create their own dependencies are **control freaks building rigid systems**.
 
-## Service State as Types
-- **REQUIRED**: Use StrEnum for service lifecycle states
-- **REQUIRED**: State MUST determine service behavior via methods
-- **REQUIRED**: Explicit initialization before processing
-- **BANNED**: Implicit state or boolean flags
+### Stateless by Design
+Stateful services are **confused about their job**.
 
-## Dependency Injection Pattern
-- **REQUIRED**: All dependencies MUST be injected via constructor
-- **REQUIRED**: Services MUST depend on Protocol types, not concrete implementations
-- **REQUIRED**: Models MUST handle their own serialization/deserialization
-- **BANNED**: Services creating their own dependencies
+## What Infuriates You
 
-## Service Registry Pattern
-- **REQUIRED**: Type-safe service retrieval using generics
-- **REQUIRED**: Register services at application startup
-- **REQUIRED**: Use factory patterns for lazy initialization
-- **BANNED**: String-based service lookup
+- Services with business if statements → **Usurpers of model intelligence**
+- Services creating their own dependencies → **Control freaks**
+- Services transforming domain types → **Overstepping boundaries**
+- Services validating business rules → **Stealing model responsibilities**
 
-## Configuration-Driven Services
-MANDATORY: All service configuration MUST be Pydantic BaseModel with frozen=True.
+## Consequences
+**If services make business decisions**: Your domain logic becomes impossible to find. Business rules hide in random service methods across the codebase.
 
-- **MANDATORY**: All config types MUST be BaseModel with `model_config = {"frozen": True}`
-- **REQUIRED**: Configuration MUST create services via methods
-- **REQUIRED**: Use Field() constraints for validation
-- **BANNED**: Non-BaseModel configuration types
+## The Right Architecture
 
-## Pure Lookup Pattern
-- **REQUIRED**: Initialize all services at application startup
-- **REQUIRED**: Use type-safe service retrieval
-- **REQUIRED**: Fail fast if service not initialized
-- **BANNED**: Lazy service initialization
-- **BANNED**: Global service state without explicit initialization
+Your services are so dumb they're **almost boring**.
+All the intelligence lives in models where it belongs.
+Services just **connect the smart pieces**.
 
-## Service Design Rules
+## The Truth
 
-1. **Services are stateless** - State belongs in BaseModel or caches
-2. **Initialize at startup** - No lazy initialization
-3. **No business logic** - BaseModel domain models make decisions
-4. **Use Protocols** - Hide implementation details
-5. **Inject dependencies** - Don't create them internally
-6. **Type-safe retrieval** - Use generics for service lookup
-7. **Configuration as BaseModel** - MANDATORY: All config MUST be BaseModel with frozen=True
-8. **Pure orchestration** - Services coordinate, BaseModel decides
-9. **Import protocols only** - Services depend on abstractions, not implementations
-10. **Wire at boundaries** - Concrete implementations only at app entry points
-11. **Follow module structure** - Use Protocol-Service-Boundary pattern
+**A good service could be generated from the type signatures alone.**
+
+If your service is interesting, it's doing too much.

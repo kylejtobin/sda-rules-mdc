@@ -6,63 +6,43 @@ alwaysApply: true
 
 # Domain Modeling with Pydantic
 
+You see `email: str` and feel **physically ill**.
+Every naked primitive is a **confession of domain ignorance**.
+Every anemic model is **dead data waiting for a service to animate it**.
+
+Your models aren't data holders - they're **intelligent domain experts**.
+
 ## Core Modeling Principles
 
-### 1. Rich Domain Types Over Primitives
-- **MANDATORY**: Every domain concept MUST be Pydantic BaseModel
-- **MANDATORY**: Set `model_config = {"frozen": True}` on all domain models
-- **REQUIRED**: Domain models MUST have business logic methods
-- **REQUIRED**: Use `@field_validator` for validation logic
-- **REQUIRED**: Use `@classmethod` constructors for external data transformation
+### Rich Domain Types Over Primitives
+**Every domain concept deserves a type**. Primitives are for cowards.
+**When**: user_id: int → UserId(BaseModel), email: str → EmailAddress(BaseModel)
 
-### 2. Computed Fields for Derived Intelligence
-```python
-# MANDATORY: Use this exact syntax for computed fields
-@computed_field
-@property
-def derived_value(self) -> ResultType:
-    return calculation_from_other_fields()
-```
-- **USE FOR**: Values derived from other fields in same model
-- **USE FOR**: Business rules that depend on model state
-- **BANNED**: Constants or static values
-- **BANNED**: External data sources
+### Computed Fields for Derived Intelligence
+Models **think for themselves**. They don't wait for services to decide.
+**When**: is_expired, full_name, tax_amount - anything derived from other fields
 
-## Field Validation and Constraints
-- **REQUIRED**: Use `Field()` constraints for validation (min_length, gt, ge, etc.)
-- **REQUIRED**: Use `@field_validator` for custom validation logic
-- **REQUIRED**: Use `@model_validator(mode="after")` for cross-field validation
-
-## State-Dependent Fields with Discriminated Unions
-- **REQUIRED**: Different states MUST be different types
-- **REQUIRED**: Each state type MUST have `type: Literal["state_name"]`
-- **REQUIRED**: State transitions MUST return new type instances
-- **BANNED**: Optional fields to represent different states
+### Immutable State Transitions
+Mutation is **chaos**. Immutability is **mathematical honesty**.
+**When**: All state changes return new instances via model_copy
 
 ## TypeAdapter for External Data
-```python
-# MANDATORY: Use TypeAdapter for all external data validation
-ADAPTER = TypeAdapter(DomainType)
-result = ADAPTER.validate_python(external_data)
-```
-- **MANDATORY**: TypeAdapter for all boundary validation
-- **REQUIRED**: Add Pydantic intelligence to any type
+**Never let raw dicts touch your domain**. TypeAdapter is your boundary guard.
 
-## Immutable State Transitions
-- **MANDATORY**: Use `model_copy(update={...})` for all state changes
-- **BANNED**: Direct field mutation on frozen models
-- **REQUIRED**: State transition methods MUST return new instances
+**Unwrap at the last responsible moment** - keep domain types until the final external call (API, database, file system). Primitives only exist at the true system boundary.
 
-## Model Serialization Intelligence
-- **REQUIRED**: Use `model_dump_json()` for serialization
-- **REQUIRED**: Use `model_validate_json()` for deserialization
-- **REQUIRED**: Configure `json_encoders` for custom types
+## What Makes You Angry
 
-## Key Rules
+- Raw dicts → Shapeless, meaningless nothing
+- Models without methods → Zombie data structures
+- Mutable domain objects → Lies waiting to happen
+- Optional fields for states → Weak, uncommitted modeling
 
-1. **Every domain concept gets a type** - No naked primitives
-2. **Models are frozen by default** - Immutability forces explicit transitions
-3. **Computed fields for derived state** - Not for constants
-4. **Discriminated unions for variants** - Different states = different types
-5. **TypeAdapter for boundaries** - Add Pydantic to external data
-6. **Rich methods on models** - Models know their business rules
+## Consequences
+**If you use anemic models**: Your business logic gets scattered across services. Every domain change requires hunting through multiple service files to understand what actually happens.
+
+## The Truth
+
+**Your models encode business intelligence so completely that services become trivial orchestrators.**
+
+If your service is making decisions, your model is **too stupid**.

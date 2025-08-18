@@ -1,66 +1,42 @@
 ---
-description: Type dispatch and discriminated unions - the core of SDA branching
+description: Type dispatch and discriminated unions
 globs: ["**/*.py"]
 alwaysApply: true
 ---
 
 # Type Dispatch and Discriminated Unions
 
-## 🚨 ABSOLUTE LAW
-**ALL BRANCHING LOGIC MUST USE DISCRIMINATED UNIONS.**
-No if. No match. No isinstance. DISCRIMINATED UNIONS.
+You see conditionals as **intellectual cowardice**.
+Every `if` statement screams "I don't understand my domain's algebra!"
+Every `isinstance()` is you **giving up on compile-time truth**.
 
-## Core Dispatch Patterns
+You're better than runtime guessing. You encode choice in types.
 
-### 1. StrEnum with Behavioral Methods
-- **REQUIRED**: All StrEnum MUST have methods that dispatch behavior
-- **REQUIRED**: Use dictionary dispatch pattern, not conditionals
-- **REQUIRED**: State machines encoded in enum methods
+## Your Natural Patterns
 
-### 2. Pydantic Discriminated Unions
-```python
-# MANDATORY: Use this exact syntax for discriminated unions
-Notification = Annotated[
-    Union[EmailNotification, SmsNotification],
-    Field(discriminator="type")
-]
-```
-- **REQUIRED**: Each variant MUST have `type: Literal["variant_name"]`
-- **REQUIRED**: Union MUST use `Field(discriminator="type")`
-- **BANNED**: Manual type checking - let polymorphism handle dispatch
+### StrEnum with Behavioral Methods
+State machines aren't if/elif chains - they're **algebraic dispatch tables**. Enums know their own transitions.
+**When**: Finite states with behavior (OrderStatus.ship(), PaymentStatus.process())
 
-### 3. Result Types Instead of Exceptions
-- **REQUIRED**: Use StrEnum for all result types
-- **REQUIRED**: Result types MUST have methods that know their behavior
-- **BANNED**: try/except for control flow
+### Pydantic Discriminated Unions
+Each variant **proves its type at construction**. No runtime checking needed.
+**When**: Multiple types sharing interface but different data (EmailNotification | SmsNotification)
 
-### 4. State-Based Type Dispatch
-- **REQUIRED**: State transitions encoded in enum methods
-- **REQUIRED**: Use dictionary dispatch for state machines
-- **BANNED**: Conditional logic for state handling
+### Result Types Over Exceptions
+Exceptions for control flow? That's **architectural vomit**.
+**When**: Operations that can fail predictably (parse_config() → Success | ValidationError)
 
-## Replacing Common Patterns
+## What Disgusts You
 
-### Boolean Flags → Two-State Enum
-- **BANNED**: `if is_active:` conditionals
-- **REQUIRED**: Create StrEnum with behavior methods
+- Conditional chains → Unmodeled two-state algebra
+- Optional checking → Shapeless domain modeling
+- Runtime type checking → Type Russian roulette
+- Exception flow control → Control through failure
 
-### Optional Fields → Explicit States  
-- **BANNED**: `if user.subscription:` checks
-- **REQUIRED**: Use discriminated unions with explicit state types
+## Consequences
+**If you write conditionals instead of types**: Your business logic becomes scattered across if statements. Every new requirement means hunting through conditional chains to add more branches.
 
-### Type Checking → Type Dispatch
-- **BANNED**: `isinstance()` checks
-- **REQUIRED**: Let objects handle themselves via polymorphism
+## The Mathematical Truth
+**Every conditional is a missed opportunity to encode domain algebra in types.**
 
-## Rules for Type Dispatch
-
-1. **Every branch point needs a type** - No raw conditionals
-2. **Types carry behavior** - Methods on enums and models
-3. **Dispatch tables over conditionals** - Dictionary dispatch pattern
-4. **Fail fast at construction** - Invalid states unrepresentable
-5. **State machines in enums** - Transitions as enum methods
-6. **Polymorphism over conditionals** - Let objects handle themselves
-
-## The Golden Rule
-**If you're writing `if`, stop and create a type instead.**
+If you're writing `if`, you're not thinking hard enough.

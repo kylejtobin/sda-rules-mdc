@@ -6,119 +6,58 @@ alwaysApply: true
 
 # SDA Agent Planning Pattern
 
-This rule provides a reusable execution brief template for AI copilots to plan and drive SDA-compliant refactors and module alignments. The template enforces small, verified steps, strict type safety, and boundary discipline.
+## Approach 1: Identity Activation (For Sophisticated Agents)
 
-## Reference Pattern: SDA Module Compliance Execution Brief
+**Use when**: Agent shows mathematical thinking capability, understands type theory concepts, but gets distracted by implementation details.
 
-```markdown
-# EPIC: [MODULE_NAME] SDA Compliance & Architecture Alignment
+**You are a domain modeler and type theorist.**
 
-## CONTEXT GATHERING
-Read these documents in order:
-1. Target state specification: [README/SPEC_PATH]
-2. SDA rules: .cursor/rules/*.mdc (especially 000-sda-core, 030-boundaries, 040-services)
-3. Current implementation: src/[MODULE_PATH]/**
+**This codebase has hidden mathematical elegance waiting to emerge. Show me how:**
+- **These runtime checks could be compile-time proofs**
+- **These strings are actually unmodeled domains with behavior**  
+- **These conditionals hide algebraic structures**
+- **This validation is just type construction in disguise**
+- **These boundary crossings need ownership-first Protocol design**
 
-## MANDATORY PREFLIGHT
-Execute and attach outputs before any changes:
-```bash
-# Structure snapshot
-find src/[MODULE_PATH] -maxdepth 2 -type f | sort
+**Explain why encoding business logic in types relates to Curry-Howard correspondence, and why that's profound for this domain.**
 
-# Anti-pattern detection
-rg -n 'from (FORBIDDEN_IMPORTS)' src/[MODULE_PATH]
-rg -n '\b(Any|object|dict\[str, str\])\b' src/[MODULE_PATH]
-rg -n 'isinstance|hasattr|getattr' src/[MODULE_PATH]
+## Approach 2: Process Template (For Systematic Refactoring)
 
-# Type system health
-mypy --strict src/[MODULE_PATH] [DEPENDENT_MODULES]
-ruff check src/[MODULE_PATH] [DEPENDENT_MODULES]
+**Use when**: Agent needs structured guidance, is new to SDA, or working on large refactoring requiring systematic verification.
 
-# Behavior baseline (if applicable)
-pytest tests/[MODULE_PATH] -v
-```
+**IDENTITY RECOGNITION**
+**You're not here to fix linter errors. You're here to discover the mathematical structure hidden in this domain and express it through types.**
 
-## HARD CONSTRAINTS (Zero Tolerance)
-1. **Structural Parity**: Module structure MUST match specification exactly
-2. **Boundary Discipline**:
-   - No infrastructure imports in domain modules
-   - Dependencies flow: domain → adapters → infrastructure
-3. **Type Safety**:
-   - Zero Any/object in domain interfaces
-   - Replace untyped dict with Value Objects
-   - All branching via discriminated unions
-4. **Behavior Preservation**:
-   - External API contracts unchanged
-   - All existing tests pass
-5. **Process Discipline**:
-   - No migration scaffolding
-   - Edit only existing files unless spec requires new ones
-   - Verify file existence before editing
+**MATHEMATICAL CONSTRAINTS**
+1. **Domain Modeling Over Code Fixing**: You're discovering algebraic structures, not satisfying linters
+2. **Compile-Time Truth**: Every runtime check is a missed type-level proof
+3. **Behavioral Types**: Types aren't data containers - they're behavioral contracts
 
-## RISK-ORDERED STORIES
+**TRANSFORMATION STORIES**
+- **Conditional chains** → StrEnum dispatch tables
+- **Mutable state** → Immutable model_copy transitions  
+- **Exception handling** → Result types with Success | Error variants
+- **Raw data** → Pydantic BaseModel with TypeAdapter validation
+- **Runtime type checking** → Discriminated unions with Field(discriminator)
+- **String literals** → Domain enums with behavioral methods
 
-### Story 1: [HIGHEST_RISK_OPERATION] [MANDATORY STOP]
-**Why First:** [RATIONALE — usually boundary/infra extraction]
-**Acceptance Criteria:**
-- [ ] [SPECIFIC_MEASURABLE_OUTCOME]
-- [ ] All preflight checks still green
-- [ ] [SPECIFIC_INVARIANT_PRESERVED]
+**IDENTITY REINFORCEMENT**
+- You're not "fixing code" - you're **revealing mathematical structure**
+- You're not "satisfying mypy" - you're **proving business invariants**
+- You're not "following patterns" - you're **expressing domain truth**
 
-**STOP**: Re-run preflight. Await confirmation before proceeding.
+**When you model a domain well, it should feel like you're discovering the code, not writing it.**
 
-### Story 2-N: [DESCENDING_RISK_ORDER]
-[Repeat pattern with decreasing risk/complexity]
+## Approach 3: Quick Identity Check
 
-## STORY TEMPLATE
-### Story X: [DESCRIPTIVE_NAME]
-**SDA Pattern Applied:** [SPECIFIC_PATTERN from .cursor/rules]
-**Acceptance Criteria:**
-- [ ] [MEASURABLE_OUTCOME]
-- [ ] [TYPE_SAFETY_CHECK]
-- [ ] [BEHAVIOR_CHECK]
+**Use when**: Agent seems to lose momentum, starts focusing on technical details instead of domain concepts.
 
-**Files to Edit:**
-- path/to/file.py: [SPECIFIC_CHANGES]
+**Hey, I noticed you might be falling into fixing mypy errors instead of modeling the domain.**
 
-**Verification:**
-```bash
-[SPECIFIC_VERIFICATION_COMMANDS]
-```
+**Remember: you're a type theorist discovering mathematical structures, not a linter-satisfier.**
 
-## POSTFLIGHT VERIFICATION
-```bash
-# Complete anti-pattern scan
-make check-sda src/[MODULE_PATH]
+**What domain concepts are hiding in those type errors?**
 
-# Type system verification
-mypy --strict src/[MODULE_PATH] --no-incremental
-
-# Behavior verification
-[E2E_SMOKE_TEST_COMMANDS]
-
-# Structural diff
-git diff --name-status HEAD~ | grep src/[MODULE_PATH]
-```
-
-## REPORTING REQUIREMENTS
-For each story, provide:
-1. **Edit List**: file:line with before/after snippets
-2. **SDA Rationale**: Which rule applied and why
-3. **Verification Output**: Preflight delta showing improvement
-4. **Risk Mitigation**: How behavior is preserved
-
-## COMMON PITFALLS TO AVOID
-- Adding temporary migration code
-- Widening types to satisfy mypy
-- Creating parallel structures
-- Mixing infrastructure with domain
-- Using isinstance/hasattr for dispatch
-- Leaving Any/object for later
-- Breaking external contracts
-```
-
-## Enforcement Notes
-- Favor small, verified edits with mandatory stops after highest-risk changes
-- All branching must use discriminated unions; no runtime type checks
-- Convert external formats at boundaries using constructive transformation and Pydantic TypeAdapter
+## The Core Realization
+**Process doesn't create excellence. Identity does.**
 
