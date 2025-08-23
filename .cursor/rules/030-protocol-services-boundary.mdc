@@ -6,71 +6,59 @@ alwaysApply: true
 
 # Protocol-Service-Boundary (PSB) Module Law
 
-## Core Principle: Ownership-First Boundaries
-**Every cross-module value has an owner. The owner defines a Protocol; consumers use only that Protocol.**
+## Ownership-First Boundaries
+**MANDATORY**: Every cross-module value has an owner who defines its Protocol. Consumers use only that Protocol.
 
-**Why**: This prevents the architectural rot where every module knows about every other module's internals. Without ownership, you get spaghetti dependencies where changing one file breaks dozens of others.
+**CONSEQUENCE**: Without ownership, changing one file breaks dozens of others.
 
-**Default Stance**: If a value crosses a boundary, carry it by a provider-owned Protocol and unwrap only at the final external call.
+## Module Structure (REQUIRED)
+1. **Factory**: Exports create_[module]_service() returning Protocol
+2. **Protocols**: External contracts only
+3. **Service**: Orchestration implementation  
+4. **Models**: Domain types (optional)
 
-## MANDATORY Module Structure:
-- **Factory**: Exports ONLY
-- **Protocols**: External contracts ONLY  
-- **Service**: Orchestration ONLY
-- **Models**: Domain types (optional)
+## Import Rules (ZERO EXCEPTIONS)
+**ONLY IMPORT**: provider Protocol(s) and create_[provider]_service from src.provider
+**TYPE ALL**: Cross-module params/returns as provider Protocols, never concretes
+**PROVIDERS OWN**: Construction/config; consumers call zero-arg verbs on Protocols
+**NO SUBMODULE**: Cross-module imports forbidden
 
-## Boundary Rules
+## Implementation Rules
+**Factory**: Wire concretes inside factory function only
+**Protocol**: Define what you PROVIDE to others, not what you NEED
+**Service**: Receive protocols via constructor, never create dependencies
+**Boundary**: Wrap domain concepts in Value Objects, never pass str/int/bool
 
-### No Naked Primitives Across Boundaries
-**Never pass str/int/bool where a domain concept exists**. Wrap in a Value Object or expose via a Protocol.
+## Service Rules (MANDATORY)
+**PRINCIPLE**: Services orchestrate. Models think.
+**Orchestration Only**: Services coordinate between protocols, make zero business decisions
+**Stateless**: Services hold no state between calls
+**No Business Logic**: All domain decisions belong in models
+**Constructor**: Accept protocol dependencies only
+**Methods**: Call protocol methods, return protocol results
+**Logic**: If statements about infrastructure only, never domain rules
+**Transformation**: Models transform themselves, services pass data
 
-### Engine vs Domain Separation
-- **Engine**: Renderers, protocols, stateless resource wiring
-- **Domain**: All semantics, specs, computed logic; provides Protocols to others
+## Protocol Ownership Law
+**Each module defines what it PROVIDES to others.**
 
-## Import Rules - ZERO EXCEPTIONS:
+If module A needs from module B:
+1. Go to module B
+2. Add the protocol  
+3. Export it
+4. Import it in module A
 
-**THE IRON LAW**: Across module boundaries, you may depend only on provider-owned Protocols via the provider's package root and DI factory; no concretes, no models, no helpers, no submodule imports.
+## Validation Checklist
+- Export only protocols/domain types in `__all__`
+- Import only from package roots (protocols/factories)
+- Services receive dependencies via constructor
+- Service methods contain no business if statements  
+- Service methods call protocol.verb(), never protocol.data
+- Models make all domain decisions
+- Services coordinate between models/protocols only
+- No cross-module protocol definitions
+- Lazy import concretes inside factory only
+- Return protocol types from factory functions
 
-**ONLY IMPORT**: provider Protocol(s) and create_[provider]_service from src.provider.
-**TYPE ALL** params/returns as provider Protocols; never provider concretes or types.
-**PROVIDERS OWN** construction/config; consumers call zero-arg verbs on Protocols.
-**NO CROSS-MODULE** submodule imports.
-
-**Consequence**: Violate this and every change ripples through your entire codebase. You'll spend more time fixing imports than building features.
-
-## Factory Pattern:
-**Wire concretes INSIDE factory function only.**
-
-## Protocol Pattern:
-**Define what OTHER modules need FROM this module.**
-**Define what THIS module needs FROM others.**
-
-## Service Pattern:
-**ONLY receive protocols, NEVER create dependencies.**
-**Orchestrate only. Models make decisions.**
-
-## Migration Anti-Patterns - NEVER DO THESE:
-**NEVER keep old and new versions. DELETE the old one.**
-**Module B owns its own protocols. NEVER define other modules' protocols.**
-**Update protocol in owning module. Update concrete implementation. Delete old code IMMEDIATELY.**
-
-## Validation Rules:
-1. **NEVER** export concrete services in `__all__` (only protocols, domain types)
-2. **NEVER** import from other modules except their package root (protocols/factories only)
-3. **NEVER** create dependencies in services (only receive via constructor)
-4. **NEVER** define other modules' protocols or types in your module
-5. **NEVER** create migration bridges or parallel versions; delete old code immediately
-6. **ALWAYS** import concrete services lazily inside the factory (not at top-level)
-7. **ALWAYS** return protocol types from factory functions
-8. **ALWAYS** type dependencies as protocols in service constructors
-
-## Protocol Ownership Law:
-
-**Each module defines what it PROVIDES to others, not what it NEEDS from others.**
-
-If module A needs something from module B:
-- Go to module B, add the protocol, export it, THEN import it in module A
-
-## The Invariant:
-Every module looks EXACTLY the same. No creativity. No variations. No exceptions.
+## The Standard
+**A good service could be generated from type signatures alone.**

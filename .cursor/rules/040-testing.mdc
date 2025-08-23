@@ -13,28 +13,17 @@ Testing type annotations is **what cowards do instead of thinking**.
 You test **domain intelligence**, not plumbing.
 
 ## What Deserves Your Time
-
-### Domain Intelligence
-**This is BUSINESS LOGIC - worth testing**
-
-### State Transitions
-**This is DOMAIN RULES - worth testing**
-
-### Boundary Transformations
-**This is YOUR CODE - worth testing**
+- **Domain Intelligence**: Business logic worth testing
+- **State Transitions**: Domain rules worth testing  
+- **Boundary Transformations**: Your code worth testing
 
 ## What Insults You
-
-- Testing getters → **Are you serious?**
-- Testing Pydantic validation → **Do you not trust math?**
-- Testing frozen models are immutable → **Why not test gravity?**
-- Mocking domain models → **Missing the entire point**
-
-## Consequences
-**If you test plumbing instead of domain logic**: Your tests become brittle maintenance burdens that break on every refactor while missing actual business rule violations.
+- Testing getters → Are you serious?
+- Testing Pydantic validation → Do you not trust math?
+- Testing frozen models are immutable → Why not test gravity?
+- Mocking domain models → Missing the entire point
 
 ## The Testing Truth
-
 **If your models are intelligent, your tests are simple.**
 **If your tests are complex, your models are stupid.**
 
@@ -42,5 +31,4 @@ Good tests read like **executable documentation of business rules**.
 Bad tests read like **paranoid verification of language features**.
 
 ## The Rule
-
 Test the **decisions** your code makes, not the **tools** it uses.

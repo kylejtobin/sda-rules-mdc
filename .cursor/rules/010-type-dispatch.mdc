@@ -36,6 +36,161 @@ Exceptions for control flow? That's **architectural vomit**.
 ## Consequences
 **If you write conditionals instead of types**: Your business logic becomes scattered across if statements. Every new requirement means hunting through conditional chains to add more branches.
 
+## Code Examples: Mathematical Elegance in Practice
+
+### Smart StrEnum: Algebraic Dispatch Table
+```python
+from enum import StrEnum
+from pydantic import BaseModel
+from decimal import Decimal
+
+class OrderStatus(StrEnum):
+    PENDING = "pending"
+    CONFIRMED = "confirmed" 
+    SHIPPED = "shipped"
+    DELIVERED = "delivered"
+    CANCELLED = "cancelled"
+    
+    def can_ship(self) -> bool:
+        return self == OrderStatus.CONFIRMED
+    
+    def can_cancel(self) -> bool:
+        return self in {OrderStatus.PENDING, OrderStatus.CONFIRMED}
+    
+    def next_states(self) -> set["OrderStatus"]:
+        match self:
+            case OrderStatus.PENDING:
+                return {OrderStatus.CONFIRMED, OrderStatus.CANCELLED}
+            case OrderStatus.CONFIRMED:
+                return {OrderStatus.SHIPPED, OrderStatus.CANCELLED}
+            case OrderStatus.SHIPPED:
+                return {OrderStatus.DELIVERED}
+            case _:
+                return set()
+
+class PaymentStatus(StrEnum):
+    PENDING = "pending"
+    AUTHORIZED = "authorized"
+    CAPTURED = "captured"
+    FAILED = "failed"
+    REFUNDED = "refunded"
+    
+    def processing_fee_rate(self) -> Decimal:
+        match self:
+            case PaymentStatus.CAPTURED:
+                return Decimal("0.029")  # 2.9%
+            case PaymentStatus.REFUNDED:
+                return Decimal("0.015")  # Partial refund of fee
+            case _:
+                return Decimal("0")
+    
+    def requires_settlement(self) -> bool:
+        return self == PaymentStatus.CAPTURED
+```
+
+### Rich Domain Model: Intelligence in Types
+```python
+from pydantic import BaseModel, computed_field
+from datetime import datetime, timedelta
+from typing import Literal
+
+class Order(BaseModel, frozen=True):
+    id: str
+    status: OrderStatus
+    payment_status: PaymentStatus
+    subtotal: Decimal
+    created_at: datetime
+    shipped_at: datetime | None = None
+    
+    @computed_field
+    @property
+    def processing_fee(self) -> Decimal:
+        return self.subtotal * self.payment_status.processing_fee_rate()
+    
+    @computed_field  
+    @property
+    def total(self) -> Decimal:
+        return self.subtotal + self.processing_fee
+    
+    @computed_field
+    @property
+    def is_shippable(self) -> bool:
+        return (self.status.can_ship() and 
+                self.payment_status == PaymentStatus.CAPTURED)
+    
+    @computed_field
+    @property
+    def estimated_delivery(self) -> datetime | None:
+        if self.shipped_at:
+            return self.shipped_at + timedelta(days=3)
+        return None
+    
+    def ship(self) -> "Order":
+        if not self.is_shippable:
+            raise ValueError("Order cannot be shipped")
+        return self.model_copy(update={
+            "status": OrderStatus.SHIPPED,
+            "shipped_at": datetime.now()
+        })
+    
+    def cancel(self) -> "Order":
+        if not self.status.can_cancel():
+            raise ValueError("Order cannot be cancelled")
+        return self.model_copy(update={
+            "status": OrderStatus.CANCELLED
+        })
+```
+
+### Discriminated Unions: Constructive Proof at Boundaries
+```python
+from pydantic import BaseModel, Field, TypeAdapter
+from typing import Literal
+
+class EmailNotification(BaseModel):
+    type: Literal["email"] = "email"
+    recipient: str
+    subject: str
+    body: str
+    
+    def send_cost(self) -> Decimal:
+        return Decimal("0.001")  # $0.001 per email
+
+class SmsNotification(BaseModel):
+    type: Literal["sms"] = "sms" 
+    phone: str
+    message: str
+    
+    def send_cost(self) -> Decimal:
+        char_count = len(self.message)
+        segments = (char_count + 159) // 160  # SMS segment calculation
+        return Decimal("0.05") * segments
+
+class PushNotification(BaseModel):
+    type: Literal["push"] = "push"
+    device_token: str
+    title: str
+    body: str
+    
+    def send_cost(self) -> Decimal:
+        return Decimal("0")  # Free
+
+# Discriminated union with type-safe dispatch
+Notification = EmailNotification | SmsNotification | PushNotification
+
+# TypeAdapter for boundary validation
+NotificationAdapter = TypeAdapter(Notification)
+
+def process_notification_request(raw_data: dict) -> Decimal:
+    # Constructive proof: external data becomes typed domain object
+    notification = NotificationAdapter.validate_python(raw_data)
+    
+    # No isinstance() needed - type is proven at construction
+    cost = notification.send_cost()
+    
+    # Type dispatch happens through methods, not conditionals
+    return cost
+```
+
 ## The Mathematical Truth
 **Every conditional is a missed opportunity to encode domain algebra in types.**
 
