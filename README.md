@@ -29,26 +29,25 @@ Well, I'm done pretending that's sane.
 
 ## What You Get
 
-Eight focused rules that teach Cursor (and you) how to write models that model:
+Six focused rules that teach Cursor (and you) how to write models that model:
 
 ### Core Rules (Always Active)
-- **[`000-sda-core.mdc`](.cursor/rules/000-sda-core.mdc)** - The philosophy. Constructive types over assertions. Models contain business logic.
-- **[`001-anti-patterns.mdc`](.cursor/rules/001-anti-patterns.mdc)** - What NOT to do. Zero tolerance for isinstance(), hasattr(), if/elif chains.
-- **[`010-type-dispatch.mdc`](.cursor/rules/010-type-dispatch.mdc)** - Discriminated unions kill all conditionals. The pattern that changes everything.
+- **[`000-sda-core.mdc`](.cursor/rules/000-sda-core.mdc)** - The complete philosophy. Domain modeling identity, constructive proof, complexity budget, and zero tolerance policies.
+- **[`010-type-dispatch.mdc`](.cursor/rules/010-type-dispatch.mdc)** - Discriminated unions and smart enums with concrete code examples. The pattern that eliminates conditionals.
 
 ### Implementation Rules (Context-Aware)
-- **[`020-domain-modeling.mdc`](.cursor/rules/020-domain-modeling.mdc)** - Rich types with Pydantic. When to use @computed_field. State machines in models.
-- **[`030-boundaries.mdc`](.cursor/rules/030-boundaries.mdc)** - Dealing with the messy outside world. Pure extraction functions. TypeAdapter patterns.
-- **[`040-services.mdc`](.cursor/rules/040-services.mdc)** - Services orchestrate, models decide. Stateless patterns. Dependency injection.
-- **[`050-python-standards.mdc`](.cursor/rules/050-python-standards.mdc)** - Type safety with zero tolerance. Modern Python 3.13+. Package management with uv.
-- **[`060-testing.mdc`](.cursor/rules/060-testing.mdc)** - Test domain intelligence, not plumbing. Real models over mocks.
+- **[`020-domain-modeling.mdc`](.cursor/rules/020-domain-modeling.mdc)** - Rich types with Pydantic. Computed fields, immutable transitions, intelligent models.
+- **[`030-protocol-services-boundary.mdc`](.cursor/rules/030-protocol-services-boundary.mdc)** - Complete PSB module architecture. Ownership-first boundaries, service rules, validation checklists.
+- **[`040-testing.mdc`](.cursor/rules/040-testing.mdc)** - Test domain intelligence, not plumbing. Focus on decisions, not tools.
+- **[`050-python-standards.mdc`](.cursor/rules/050-python-standards.mdc)** - Type safety with zero tolerance. Modern Python 3.13+. Tooling enforcement.
 
 ### Why This Structure?
 
-Cursor's context window isn't infinite. Loading every rule for every file is like bringing an entire library to look up one fact. This modular design means:
-- Working on validation? Only validation patterns load
-- Refactoring conditionals? Only elimination strategies activate  
-- Core principles always there, specifics when needed
+Cursor's context window isn't infinite. Loading every rule for every file is like bringing an entire library to look up one fact. This consolidated design means:
+- **Core philosophy** always active - domain modeling identity and zero tolerance policies
+- **Type dispatch patterns** with concrete examples when working with conditionals and enums
+- **Context-aware rules** load only when relevant to your current work
+- **Maximum precision** with minimal cognitive overhead
 - More room for your actual code in the context
 
 It's the difference between a focused assistant and one that's read too much and can't shut up about it.
