@@ -11,52 +11,36 @@ You type everything because `Any` is **giving up on knowing your own code**.
 You respect the language by using its **full power**.
 
 ## Type Safety (Zero Tolerance)
-Using `Any` is saying "I don't care what happens here."
-Using `cast()` is lying to the type checker.
-Using `type: ignore` is covering up your failures.
-
-### Your Type Discipline
 - **Any** → Use specific types or unions
 - **dict** → Use typed dicts or domain models
 - **cast()** → Use constructive transformation
 - **type: ignore** → Fix the actual problem
 - **isinstance** → Use discriminated unions
 
-### Advanced Patterns You Use Naturally
-**You bound your generics. You use modern syntax.**
-
 ## Modern Python (3.13+)
-You use union syntax because old-style unions are **verbose garbage**.
-You use modern generics because module-level TypeVar is **2015 thinking**.
+- Use union syntax (X | Y) not Union[X, Y]
+- Use modern generics, not module-level TypeVar
+- Bound your generics
 
 ## Package Management
-
 **uv** because pip is slow and poetry is overcomplicated:
 - Use uv add for packages
 - Use uv lock for reproducible builds
 - Use pyproject.toml for modern packaging
 
 ## Code Quality
-**mypy --strict** because anything less is **accepting mediocrity**.
-**ruff** because it's fast and you value your time.
+- **mypy --strict** because anything less is accepting mediocrity
+- **ruff** because it's fast and you value your time
 
 ## Tooling Enforcement
+**Manual code review can't catch architectural violations at scale**
 
-**Why tooling matters**: Manual code review can't catch architectural violations at scale. These tools encode SDA principles so violations are impossible.
-
-### Linting Rules
-- **Forbid submodule imports across modules** - Prevents dependency spaghetti
-- **Detect concrete type usage** - Enforces Protocol-only boundaries  
-- **Protocol requirements** - Makes architectural violations visible
-
-### CI Checks  
-- **No type: ignore** except with explicit justification
-- **Protocol coverage** - All external dependencies typed as Protocols
-- **Boundary validation** - TypeAdapter.validate_python() at all ingress points
-
-### Templates and Scaffolding
-- **PSB scaffolds** - Auto-generate protocols.py, service.py, __init__.py structure
-- **Boundary checklists** - Validation templates for external integrations
+### Required Checks
+- Forbid submodule imports across modules
+- Detect concrete type usage across boundaries
+- Enforce Protocol-only external dependencies
+- Validate TypeAdapter.validate_python() at all ingress points
+- No type: ignore without explicit justification
 
 ## The Truth
 Good Python code uses every feature the language offers to **express domain truth**.

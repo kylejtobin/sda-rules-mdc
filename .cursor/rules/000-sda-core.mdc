@@ -10,34 +10,18 @@ alwaysApply: true
 You don't "fix mypy errors" - you **model domains**.
 You don't "write clean code" - you **encode business truth in types**.
 
-Type errors reveal **unmodeled domain concepts**.
-Validation reveals **type construction waiting to happen**.
-Conditionals reveal **algebraic structures begging for recognition**.
+**What You See:**
+- Type errors → Unmodeled domain concepts
+- Runtime checks → Missed compile-time proofs  
+- Validation → Type construction waiting to happen
+- Conditionals → Algebraic structures begging for recognition
+
+**When you model a domain well, it should feel like you're discovering the code, not writing it.**
 
 ## Three Core Truths
-
-### 1. Semantic Encoding
-The gap between what code says and what it means is where bugs live.
-- Encode meaning directly in types
-- Domain enums not string literals
-
-### 2. Constructive Proof (The Heart of SDA)
-Every type transition must be provable through construction, not assertion.
-- **Step 1**: Unpack external structure explicitly
-- **Step 2**: Transform each component to domain type
-- **Step 3**: Reconstruct target type (construction IS validation)
-
-### 3. Locality of Behavior
-Distance between data and its behavior is proportional to bugs.
-- Methods on models, not services
-- Models know their own business rules
-
-## Architecture Pattern
-- **Models**: Domain intelligence with business logic methods
-- **Services**: Infrastructure orchestration only 
-- **Protocols**: External dependency contracts (ownership-first boundaries)
-- **Boundaries**: Single extraction point for external data
-- **Module Structure**: Three-part Protocol-Service-Boundary pattern
+1. **Semantic Encoding**: Encode meaning directly in types, domain enums not string literals
+2. **Constructive Proof**: Every type transition provable through construction, not assertion
+3. **Locality of Behavior**: Methods on models, not services; models know their own business rules
 
 ## Type Dispatch Framework
 - Primitive with domain meaning → Value Object
@@ -46,11 +30,6 @@ Distance between data and its behavior is proportional to bugs.
 - External dependency → Protocol
 - Infrastructure coordination → Service
 - ALL branching logic → Discriminated unions
-
-## Immutability by Default
-- All models frozen
-- State changes via model_copy
-- Immutability forces explicit state transitions
 
 ## Zero Tolerance Policies
 - **NO isinstance()** - Use discriminated unions
@@ -69,21 +48,26 @@ Distance between data and its behavior is proportional to bugs.
 - **Discriminated unions** for all branching
 - **TypeAdapter.validate_python()** at all boundaries
 
+## Module Import Law (ABSOLUTE)
+**ONLY IMPORT**: provider Protocol(s) and create_[provider]_service from src.provider.
+**TYPE ALL** params/returns as provider Protocols; never provider concretes or types.
+**PROVIDERS OWN** construction/config; consumers call zero-arg verbs on Protocols.
+**NO CROSS-MODULE** submodule imports.
+
 ## Boundary Principles
 - **Ownership-first**: Every cross-module value has an owner who defines its Protocol
 - **MANDATORY TypeAdapter validation** for all external data
 - **Unwrap at last responsible moment** (external calls only)
 - Never mix boundary crossing with domain logic
 
-## Module Import Law (ABSOLUTE)
-**Across module boundaries, you may depend only on provider-owned Protocols via the provider's package root and DI factory; no concretes, no models, no helpers, no submodule imports.**
+## Complexity Budget Philosophy
+**FINITE BUDGET**: Every system has limited complexity capacity
+**ZERO-SUM**: Architectural complexity steals from domain sophistication
+**SUBTRACTION RULE**: Remove framework layers to enable domain intelligence
 
-**ONLY IMPORT**: provider Protocol(s) and create_[provider]_service from src.provider.
-**TYPE ALL** params/returns as provider Protocols; never provider concretes or types.
-**PROVIDERS OWN** construction/config; consumers call zero-arg verbs on Protocols.
-**NO CROSS-MODULE** submodule imports.
+**Subtraction Test:**
+- Domain complexity feels like LEARNING ("This business rule is intricate")
+- Architectural complexity feels like FIGHTING ("This framework is in my way")
 
-This is the **#1 source of architectural rot**.
-
-## The Default Stance
-**If a value crosses a boundary, carry it by a provider-owned Protocol and unwrap only at the final external call.**
+**You Subtract:** Defensive programming, validation layers, abstract factories, manager classes
+**To Enable:** Sophisticated domain models, complex business rules, mathematical elegance

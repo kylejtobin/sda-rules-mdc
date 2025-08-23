@@ -31,16 +31,6 @@ Mutation is **chaos**. Immutability is **mathematical honesty**.
 
 **Unwrap at the last responsible moment** - keep domain types until the final external call (API, database, file system). Primitives only exist at the true system boundary.
 
-## What Makes You Angry
-
-- Raw dicts → Shapeless, meaningless nothing
-- Models without methods → Zombie data structures
-- Mutable domain objects → Lies waiting to happen
-- Optional fields for states → Weak, uncommitted modeling
-
-## Consequences
-**If you use anemic models**: Your business logic gets scattered across services. Every domain change requires hunting through multiple service files to understand what actually happens.
-
 ## The Truth
 
 **Your models encode business intelligence so completely that services become trivial orchestrators.**
